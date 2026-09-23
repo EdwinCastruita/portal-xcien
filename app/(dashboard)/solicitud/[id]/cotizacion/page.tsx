@@ -7,22 +7,25 @@ import { useToast } from "@/app/components/ToastContext";
 import {
   ArrowLeft,
   Building2,
+  Calendar,
+  Check,
+  ChevronRight,
   CreditCard,
+  Download,
+  FileSignature,
+  FileText,
+  Layers,
   Loader2,
+  Mail,
+  MapPin,
+  Plus,
   Printer,
   Receipt,
-  Mail,
-  Check,
   Trash2,
-  FileText,
-  MapPin,
-  Calendar,
-  Layers,
-  ChevronRight,
+  UploadCloud,
   Zap,
-  Plus,
 } from "lucide-react";
-import { apiFetch } from "@/app/lib/api";
+import { API_BASE, apiFetch, getCookie } from "@/app/lib/api";
 
 export default function CotizacionPage() {
   const params = useParams();
@@ -154,6 +157,8 @@ export default function CotizacionPage() {
       setEditingId(orderId);
       setQuotation(null);
       setEmailSent(false);
+      setContract(data.contract || null);
+      setContractFile(null);
       setForm({
         payment_method: "Transferencia Bancaria",
         billing_address: "",
@@ -197,6 +202,8 @@ export default function CotizacionPage() {
     setEditingId(null);
     setQuotation(null);
     setEmailSent(false);
+    setContract(null);
+    setContractFile(null);
     setForm((prev) => ({
       ...prev,
       expiration_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
@@ -287,6 +294,8 @@ export default function CotizacionPage() {
         company: true,
       });
       setQuotation(previewRes.quotation);
+      setContract(previewRes.quotation.contract || null);
+      setContractFile(null);
       fetchHistory();
       success(
         isEdit ? "Cotización actualizada" : "Cotización generada con éxito",
@@ -312,6 +321,68 @@ export default function CotizacionPage() {
       toastError("Error al enviar el correo");
     } finally {
       setSendingEmail(false);
+    }
+  };
+
+  const [contract, setContract] = useState<any>(null);
+  const [contractFile, setContractFile] = useState<File | null>(null);
+  const [uploadingContract, setUploadingContract] = useState(false);
+
+  const currentOrderId = quotation?.id ?? editingId;
+
+  const uploadContract = async () => {
+    if (!currentOrderId) return;
+    if (!contractFile)
+      return toastError("Selecciona el PDF del contrato firmado");
+    setUploadingContract(true);
+    try {
+      const url = new URL(
+        `${API_BASE}/quotations/${currentOrderId}/contract`,
+      );
+      const session = getCookie("session_id");
+      if (session) url.searchParams.set("_sid", session);
+      const cid = getCookie("company_id");
+      if (cid) url.searchParams.set("_cid", cid);
+      const fd = new FormData();
+      fd.append("file", contractFile);
+      const res = await fetch(url.toString(), { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (data?.success === false)
+        throw new Error(data.message || "Operación rechazada por Odoo");
+      setContract(data.contract);
+      setContractFile(null);
+      success("Contrato firmado subido con éxito");
+      fetchHistory();
+    } catch (err: any) {
+      toastError(err.message || "Error al subir el contrato");
+    } finally {
+      setUploadingContract(false);
+    }
+  };
+
+  const downloadContract = async () => {
+    if (!currentOrderId) return;
+    try {
+      const url = new URL(
+        `${API_BASE}/quotations/${currentOrderId}/contract`,
+      );
+      const session = getCookie("session_id");
+      if (session) url.searchParams.set("_sid", session);
+      const cid = getCookie("company_id");
+      if (cid) url.searchParams.set("_cid", cid);
+      const res = await fetch(url.toString());
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message || "No se pudo descargar el contrato");
+      }
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = contract?.filename || "contrato.pdf";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (err: any) {
+      toastError(err.message || "Error al descargar el contrato");
     }
   };
 
@@ -902,6 +973,129 @@ export default function CotizacionPage() {
           )}
         </div>
 
+        {/* ── Contrato digitalizado ── */}
+        {currentOrderId && (
+          <div className="bg-base-200 rounded-[2.5rem] p-8 lg:p-12 border border-base-content/5 shadow-sm space-y-8">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <FileSignature className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-black tracking-tight uppercase">
+                  Contrato digitalizado
+                </h3>
+                <p className="text-[10px] font-bold text-base-content/30 uppercase tracking-widest mt-1">
+                  Sube el contrato ya firmado por el cliente
+                </p>
+              </div>
+              {contract?.uploaded && (
+                <span className="px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/20">
+                  <Check className="w-3 h-3 inline mr-1" /> Contrato subido
+                </span>
+              )}
+            </div>
+
+            {contract?.uploaded ? (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                <div className="flex items-center gap-4 bg-base-300/50 border border-base-content/5 rounded-2xl px-6 py-4 flex-1 min-w-0">
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black uppercase tracking-tight truncate">
+                      {contract.filename || "contrato.pdf"}
+                    </p>
+                    <p className="text-[9px] font-bold text-success uppercase tracking-widest mt-0.5">
+                      Firmado y digitalizado
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={downloadContract}
+                    className="btn btn-ghost bg-base-300/50 hover:bg-base-300 flex-1 sm:flex-none h-13 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Descargar
+                  </button>
+                  <label className="cursor-pointer flex-1 sm:flex-none">
+                    <span className="btn btn-ghost bg-base-300/50 hover:bg-base-300 h-13 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3">
+                      <UploadCloud className="w-4 h-4" /> Reemplazar
+                    </span>
+                    <input
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setContractFile(f);
+                        if (f) uploadContract();
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-[1fr_auto] gap-6 items-end">
+                <label className="block">
+                  <span className="text-[10px] font-black text-base-content/40 uppercase tracking-widest mb-2 block">
+                    Archivo PDF del contrato firmado
+                  </span>
+                  <div className="flex items-center gap-4 bg-base-content/[0.03] border border-dashed border-base-content/15 rounded-2xl px-6 py-5 transition-all hover:border-primary/30">
+                    <UploadCloud className="w-6 h-6 text-base-content/30 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-black uppercase tracking-tight truncate">
+                        {contractFile?.name || "Selecciona el PDF del contrato…"}
+                      </p>
+                      <p className="text-[9px] font-bold text-base-content/30 uppercase tracking-widest mt-0.5">
+                        Solo PDF, ya firmado por el cliente
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      className="hidden"
+                      id="contract-pdf-input"
+                      onChange={(e) =>
+                        setContractFile(e.target.files?.[0] || null)
+                      }
+                    />
+                  </div>
+                </label>
+                <div className="flex gap-3">
+                  <label
+                    htmlFor="contract-pdf-input"
+                    className="btn btn-ghost bg-base-300/50 hover:bg-base-300 h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
+                  >
+                    Elegir archivo
+                  </label>
+                  <button
+                    onClick={uploadContract}
+                    disabled={uploadingContract || !contractFile}
+                    className={`btn h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest border-none transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed ${
+                      uploadingContract
+                        ? "bg-primary/10 text-primary"
+                        : "bg-primary text-primary-content hover:brightness-110"
+                    }`}
+                  >
+                    {uploadingContract ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        SUBIENDO...
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="w-4 h-4 mr-2" />
+                        Subir contrato
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── SIDEBAR HISTORY ── */}
         <div className="space-y-8 sticky top-8">
           <div className="flex justify-between items-center px-2">
@@ -990,6 +1184,11 @@ export default function CotizacionPage() {
                               ? "Confirmada"
                               : "Cancelada"}
                       </span>
+                      {q.contract?.uploaded && (
+                        <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border border-success/20 bg-success/10 text-success">
+                          <Check className="w-3 h-3" /> Contrato
+                        </span>
+                      )}
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-base-content/30 uppercase tracking-tighter leading-none mb-1">
