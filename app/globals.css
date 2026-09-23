@@ -1,0 +1,515 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "daisyui";
+
+
+
+@plugin "daisyui/theme" {
+  name: "dark";
+  default: true;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: oklch(20% 0.01 264);
+  --color-base-200: oklch(18% 0.01 264);
+  --color-base-300: oklch(16% 0.01 262);
+  --color-base-content: oklch(90% 0.02 264);
+  --color-primary: oklch(76.66% 0.177 91.13);
+  --color-primary-content: oklch(15% 0.04 91.13);
+  --color-secondary: oklch(40% 0.02 264);
+  --color-secondary-content: oklch(95% 0.01 264);
+  --color-accent: oklch(70% 0.15 311.379);
+  --color-accent-content: oklch(15% 0.02 311.379);
+  --color-neutral: oklch(25% 0.02 264);
+  --color-neutral-content: oklch(90% 0.02 264);
+  --color-info: oklch(70% 0.12 210);
+  --color-info-content: oklch(15% 0.02 210);
+  --color-success: oklch(75% 0.15 140);
+  --color-success-content: oklch(15% 0.02 140);
+  --color-warning: oklch(80% 0.15 80);
+  --color-warning-content: oklch(15% 0.02 80);
+  --color-error: oklch(65% 0.2 25);
+  --color-error-content: oklch(15% 0.02 25);
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+
+@plugin "daisyui/theme" {
+  name: "dim";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: oklch(30.857% 0.023 264.149);
+  --color-base-200: oklch(28.036% 0.019 264.182);
+  --color-base-300: oklch(26.346% 0.018 262.177);
+  --color-base-content: oklch(82.901% 0.031 222.959);
+  --color-primary: oklch(86.133% 0.141 139.549);
+  --color-primary-content: oklch(17.226% 0.028 139.549);
+  --color-secondary: oklch(73.375% 0.165 35.353);
+  --color-secondary-content: oklch(14.675% 0.033 35.353);
+  --color-accent: oklch(74.229% 0.133 311.379);
+  --color-accent-content: oklch(14.845% 0.026 311.379);
+  --color-neutral: oklch(24.731% 0.02 264.094);
+  --color-neutral-content: oklch(82.901% 0.031 222.959);
+  --color-info: oklch(86.078% 0.142 206.182);
+  --color-info-content: oklch(17.215% 0.028 206.182);
+  --color-success: oklch(86.171% 0.142 166.534);
+  --color-success-content: oklch(17.234% 0.028 166.534);
+  --color-warning: oklch(86.163% 0.142 94.818);
+  --color-warning-content: oklch(17.232% 0.028 94.818);
+  --color-error: oklch(82.418% 0.099 33.756);
+  --color-error-content: oklch(16.483% 0.019 33.756);
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "cupcake";
+  default: false;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(97.788% 0.004 56.375);
+  --color-base-200: oklch(93.982% 0.007 61.449);
+  --color-base-300: oklch(91.586% 0.006 53.44);
+  --color-base-content: oklch(23.574% 0.066 313.189);
+  --color-primary: oklch(85% 0.138 181.071);
+  --color-primary-content: oklch(43% 0.078 188.216);
+  --color-secondary: oklch(89% 0.061 343.231);
+  --color-secondary-content: oklch(45% 0.187 3.815);
+  --color-accent: oklch(90% 0.076 70.697);
+  --color-accent-content: oklch(47% 0.157 37.304);
+  --color-neutral: oklch(27% 0.006 286.033);
+  --color-neutral-content: oklch(92% 0.004 286.32);
+  --color-info: oklch(68% 0.169 237.323);
+  --color-info-content: oklch(29% 0.066 243.157);
+  --color-success: oklch(69% 0.17 162.48);
+  --color-success-content: oklch(26% 0.051 172.552);
+  --color-warning: oklch(79% 0.184 86.047);
+  --color-warning-content: oklch(28% 0.066 53.813);
+  --color-error: oklch(64% 0.246 16.439);
+  --color-error-content: oklch(27% 0.105 12.094);
+  --radius-selector: 1rem;
+  --radius-field: 2rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 2px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "retro";
+  default: false;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(91.637% 0.034 90.515);
+  --color-base-200: oklch(88.272% 0.049 91.774);
+  --color-base-300: oklch(84.133% 0.065 90.856);
+  --color-base-content: oklch(41% 0.112 45.904);
+  --color-primary: oklch(80% 0.114 19.571);
+  --color-primary-content: oklch(39% 0.141 25.723);
+  --color-secondary: oklch(92% 0.084 155.995);
+  --color-secondary-content: oklch(44% 0.119 151.328);
+  --color-accent: oklch(68% 0.162 75.834);
+  --color-accent-content: oklch(41% 0.112 45.904);
+  --color-neutral: oklch(44% 0.011 73.639);
+  --color-neutral-content: oklch(86% 0.005 56.366);
+  --color-info: oklch(58% 0.158 241.966);
+  --color-info-content: oklch(96% 0.059 95.617);
+  --color-success: oklch(51% 0.096 186.391);
+  --color-success-content: oklch(96% 0.059 95.617);
+  --color-warning: oklch(64% 0.222 41.116);
+  --color-warning-content: oklch(96% 0.059 95.617);
+  --color-error: oklch(70% 0.191 22.216);
+  --color-error-content: oklch(40% 0.123 38.172);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "dracula";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: oklch(28.822% 0.022 277.508);
+  --color-base-200: oklch(26.805% 0.02 277.508);
+  --color-base-300: oklch(24.787% 0.019 277.508);
+  --color-base-content: oklch(97.747% 0.007 106.545);
+  --color-primary: oklch(75.461% 0.183 346.812);
+  --color-primary-content: oklch(15.092% 0.036 346.812);
+  --color-secondary: oklch(74.202% 0.148 301.883);
+  --color-secondary-content: oklch(14.84% 0.029 301.883);
+  --color-accent: oklch(83.392% 0.124 66.558);
+  --color-accent-content: oklch(16.678% 0.024 66.558);
+  --color-neutral: oklch(39.445% 0.032 275.524);
+  --color-neutral-content: oklch(87.889% 0.006 275.524);
+  --color-info: oklch(88.263% 0.093 212.846);
+  --color-info-content: oklch(17.652% 0.018 212.846);
+  --color-success: oklch(87.099% 0.219 148.024);
+  --color-success-content: oklch(17.419% 0.043 148.024);
+  --color-warning: oklch(95.533% 0.134 112.757);
+  --color-warning-content: oklch(19.106% 0.026 112.757);
+  --color-error: oklch(68.22% 0.206 24.43);
+  --color-error-content: oklch(13.644% 0.041 24.43);
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "obsidian";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: oklch(14% 0.006 264);
+  --color-base-200: oklch(11.5% 0.006 264);
+  --color-base-300: oklch(9% 0.005 264);
+  --color-base-content: oklch(92% 0.01 264);
+  --color-primary: oklch(78% 0.16 165);
+  --color-primary-content: oklch(14% 0.03 165);
+  --color-secondary: oklch(55% 0.05 264);
+  --color-secondary-content: oklch(96% 0.01 264);
+  --color-accent: oklch(75% 0.14 200);
+  --color-accent-content: oklch(14% 0.03 200);
+  --color-neutral: oklch(20% 0.008 264);
+  --color-neutral-content: oklch(90% 0.02 264);
+  --color-info: oklch(75% 0.12 220);
+  --color-info-content: oklch(15% 0.02 220);
+  --color-success: oklch(78% 0.16 150);
+  --color-success-content: oklch(15% 0.03 150);
+  --color-warning: oklch(82% 0.15 85);
+  --color-warning-content: oklch(15% 0.03 85);
+  --color-error: oklch(68% 0.19 25);
+  --color-error-content: oklch(15% 0.03 25);
+  --radius-selector: 1rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "aurora";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: oklch(22% 0.035 275);
+  --color-base-200: oklch(19% 0.032 275);
+  --color-base-300: oklch(16% 0.03 275);
+  --color-base-content: oklch(93% 0.015 270);
+  --color-primary: oklch(80% 0.16 175);
+  --color-primary-content: oklch(15% 0.03 175);
+  --color-secondary: oklch(72% 0.14 300);
+  --color-secondary-content: oklch(15% 0.03 300);
+  --color-accent: oklch(78% 0.17 230);
+  --color-accent-content: oklch(14% 0.03 230);
+  --color-neutral: oklch(30% 0.03 275);
+  --color-neutral-content: oklch(92% 0.02 270);
+  --color-info: oklch(76% 0.13 230);
+  --color-info-content: oklch(15% 0.02 230);
+  --color-success: oklch(80% 0.16 150);
+  --color-success-content: oklch(15% 0.03 150);
+  --color-warning: oklch(84% 0.15 90);
+  --color-warning-content: oklch(15% 0.03 90);
+  --color-error: oklch(70% 0.19 20);
+  --color-error-content: oklch(15% 0.03 20);
+  --radius-selector: 1rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "ivory";
+  default: false;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(98% 0.006 90);
+  --color-base-200: oklch(95.5% 0.008 85);
+  --color-base-300: oklch(92% 0.01 80);
+  --color-base-content: oklch(22% 0.02 260);
+  --color-primary: oklch(45% 0.1 155);
+  --color-primary-content: oklch(97% 0.01 155);
+  --color-secondary: oklch(60% 0.09 40);
+  --color-secondary-content: oklch(97% 0.01 40);
+  --color-accent: oklch(55% 0.12 235);
+  --color-accent-content: oklch(97% 0.01 235);
+  --color-neutral: oklch(30% 0.02 260);
+  --color-neutral-content: oklch(95% 0.01 260);
+  --color-info: oklch(58% 0.13 235);
+  --color-info-content: oklch(97% 0.02 235);
+  --color-success: oklch(50% 0.13 150);
+  --color-success-content: oklch(97% 0.02 150);
+  --color-warning: oklch(65% 0.16 75);
+  --color-warning-content: oklch(20% 0.03 75);
+  --color-error: oklch(55% 0.2 25);
+  --color-error-content: oklch(97% 0.02 25);
+  --radius-selector: 1rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/*
+  FORCE OVERRIDE:
+  Si el plugin de DaisyUI ignora el bloque superior,
+  estos selectores manuales forzarán el color amarillo Wispi.
+*/
+[data-theme="dark"] {
+  --color-primary: oklch(76.66% 0.177 91.13) !important;
+  --color-primary-content: oklch(15% 0.04 91.13) !important;
+  --color-base-100: oklch(20% 0.01 264) !important;
+  --color-base-200: oklch(18% 0.01 264) !important;
+  --color-base-300: oklch(16% 0.01 262) !important;
+  --color-accent: oklch(70% 0.15 311.379) !important;
+  --brand-yellow: #EAB308;
+}
+
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.text-primary {
+  color: var(--color-primary) !important;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  :root {
+    --brand-accent: var(--color-primary);
+    --brand-accent-glow: color-mix(in srgb, var(--color-primary) 25%, transparent);
+    --brand-accent-dark: color-mix(in srgb, var(--color-primary) 70%, black);
+  }
+
+  body {
+    @apply bg-base-100 text-base-content;
+    font-family: var(--font-geist-sans), 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* One typeface swap, applied everywhere at once: every heading in the
+     app switches from the body grotesque to a distinct geometric display
+     face. This is deliberately global (not a utility class you opt into
+     per component) so the whole product reads as redesigned, not just
+     recolored — headings are the single most-seen element on every screen. */
+  h1, h2, h3, h4 {
+    font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ─── Skeleton shimmer ────────────────────────────────────────────── */
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-base-200) 0%,
+    var(--color-base-300) 50%,
+    var(--color-base-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ─── Animations ─────────────────────────────────────────── */
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in-up    { animation: slide-in-up    0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-in-right { animation: slide-in-right 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ─── CTA hierarchy (theme-safe: works across every daisyUI theme) ─
+   1. .btn-brand           → PRIMARY   (the one next action, solid)
+   2. .btn-cta-secondary   → SECONDARY (outlined, still confident)
+   3. .btn-cta-tertiary    → TERTIARY  (quiet, text-only, low emphasis)
+   Never mix more than one .btn-brand per view — that's what keeps the
+   "next action" legible. ────────────────────────────────────────── */
+.btn-brand {
+  @apply relative text-primary-content font-black tracking-widest uppercase;
+  background-color: var(--color-primary);
+  background-image: linear-gradient(135deg, color-mix(in oklch, var(--color-primary) 78%, white) 0%, var(--color-primary) 55%, color-mix(in oklch, var(--color-primary) 82%, black) 100%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, white 25%, transparent),
+    inset 0 -2px 6px color-mix(in oklch, black 12%, transparent),
+    0 14px 32px -12px color-mix(in oklch, var(--color-primary) 55%, transparent);
+  transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1), filter 0.25s ease;
+}
+.btn-brand:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, white 25%, transparent),
+    inset 0 -2px 6px color-mix(in oklch, black 12%, transparent),
+    0 20px 44px -14px color-mix(in oklch, var(--color-primary) 65%, transparent);
+}
+.btn-brand:active { transform: translateY(0); }
+
+.btn-cta-secondary {
+  @apply bg-base-content/[0.06] border border-base-content/15 text-base-content font-black tracking-widest uppercase transition-all duration-200;
+}
+.btn-cta-secondary:hover {
+  @apply bg-base-content/10 border-base-content/25;
+  transform: translateY(-1px);
+}
+.btn-cta-secondary:active { transform: translateY(0); }
+
+.btn-cta-tertiary {
+  @apply bg-transparent text-base-content/55 font-black tracking-widest uppercase transition-all duration-200;
+}
+.btn-cta-tertiary:hover {
+  @apply text-base-content;
+}
+
+.btn-cta-danger {
+  @apply bg-error text-error-content font-black tracking-widest uppercase transition-all duration-200;
+}
+.btn-cta-danger:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.btn-cta-danger:active { transform: translateY(0); }
+
+/* A "selected chip" — for nav active states, segmented filters, tabs.
+   Deliberately NOT a solid fill: .btn-brand is the only thing on a
+   screen that gets full-strength color, so selection state elsewhere
+   reads as "current", not "the button to press". */
+.chip-selected {
+  @apply bg-primary/12 text-primary border border-primary/25 font-black tracking-widest uppercase;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ─── Elevation. Plain black shadows are invisible on a dark surface —
+   a black-on-black shadow casts nothing. Depth on a dark UI has to come
+   from a LIGHT source instead: a brand-tinted glow (visible against any
+   background because it's light, not dark) plus a real translate lift.
+   elevate-1 stays neutral (works as a faint grounding shadow on light
+   themes); elevate-2/3/glow all lean on --color-primary so they read on
+   every theme, dark or light. ─────────────────────────────────────── */
+.elevate-1 { box-shadow: 0 1px 2px oklch(0% 0 0 / 6%), 0 1px 1px oklch(0% 0 0 / 4%); }
+.elevate-2 {
+  box-shadow:
+    0 20px 40px -18px color-mix(in oklch, var(--color-primary) 30%, transparent),
+    0 4px 12px -4px oklch(0% 0 0 / 14%);
+}
+.elevate-3 {
+  box-shadow:
+    0 32px 64px -20px color-mix(in oklch, var(--color-primary) 36%, transparent),
+    0 8px 20px -6px oklch(0% 0 0 / 18%);
+}
+.elevate-glow { box-shadow: 0 16px 40px -10px color-mix(in oklch, var(--color-primary) 50%, transparent); }
+
+/* Reusable premium surface: crisp border (the real depth cue on dark
+   UI) + a hairline top highlight, like light catching a physical edge.
+   On hover it doesn't just get a shadow — the surface itself warms
+   toward the brand color and lifts, which is what actually reads as
+   "alive" on a near-black theme. */
+.card-premium {
+  @apply relative bg-base-200 border border-base-content/10;
+  border-radius: 1.5rem;
+  transition: border-color 0.35s cubic-bezier(0.16,1,0.3,1), background-color 0.35s cubic-bezier(0.16,1,0.3,1), transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.card-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--color-base-content) 22%, transparent), transparent);
+  pointer-events: none;
+}
+.card-premium.card-hover:hover {
+  background-color: color-mix(in oklch, var(--color-base-200) 92%, var(--color-primary) 8%);
+  border-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
+  transform: translateY(-4px);
+  box-shadow:
+    0 28px 56px -22px color-mix(in oklch, var(--color-primary) 38%, transparent),
+    0 2px 8px -2px oklch(0% 0 0 / 12%);
+}
+
+/* Small colored-initial identity badge — gives a card a visual anchor
+   instead of pure text, and doubles as a status cue via its border. */
+.avatar-chip {
+  @apply flex items-center justify-center shrink-0 font-black uppercase;
+  background: color-mix(in oklch, var(--color-primary) 16%, var(--color-base-200));
+  color: var(--color-primary);
+  border: 1px solid color-mix(in oklch, var(--color-primary) 25%, transparent);
+}
+
+/* Thin, theme-tinted scrollbar for internal scroll regions. */
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: color-mix(in oklch, var(--color-base-content) 22%, transparent) transparent; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--color-base-content) 20%, transparent);
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklch, var(--color-base-content) 35%, transparent);
+}
+
+/* Visible, theme-tinted focus ring — accessibility and polish together. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--color-primary) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--color-primary) 35%, transparent);
+}
+
+/* Adidas-style 3-stripe divider — brand color */
+.stripe-brand-3 {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+}
+.stripe-brand-3 span:nth-child(1) { width: 2px; @apply bg-primary; }
+.stripe-brand-3 span:nth-child(2) { width: 2px; @apply bg-primary opacity-50; }
+.stripe-brand-3 span:nth-child(3) { width: 2px; @apply bg-primary opacity-25; }
