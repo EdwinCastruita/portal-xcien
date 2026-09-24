@@ -6,10 +6,12 @@ import {
   List,
   Settings,
   LogOut,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { apiFetch, SESSION_COOKIE } from "../../lib/api";
+import { useMobileSidebar } from "./MobileSidebarContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -21,6 +23,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { isOpen, close } = useMobileSidebar();
 
   const handleLogout = async () => {
     try {
@@ -43,11 +46,27 @@ export default function Sidebar() {
 
   return (
     <>
+      {/* Overlay oscuro detrás del panel — solo en mobile, y solo mientras
+          está abierto. Tocarlo cierra el menú (igual que arrastrar/tocar
+          afuera de cualquier drawer estándar). */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden animate-fade-in"
+          onClick={close}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Fixed to the viewport, not the flex layout — guarantees it always
           spans the full window height regardless of sibling content height,
-          scroll position, or flex quirks. */}
+          scroll position, or flex quirks.
+          En mobile vive fuera de pantalla (-translate-x-full) hasta que
+          `isOpen` lo desliza a la vista; en `md:` y superior siempre está
+          visible como antes. */}
       <aside
-        className="fixed left-0 top-0 h-screen w-64 flex flex-col py-8 px-4 shrink-0 border-r border-primary/10 overflow-y-auto custom-scrollbar z-40"
+        className={`fixed left-0 top-0 h-screen w-64 flex flex-col py-8 px-4 shrink-0 border-r border-primary/10 overflow-y-auto custom-scrollbar z-[60] transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
         style={{
           background:
             "linear-gradient(180deg, var(--color-base-200) 0%, var(--color-base-200) 60%, var(--color-base-300) 100%)",
@@ -56,6 +75,18 @@ export default function Sidebar() {
         {/* ambient corner glow so the panel doesn't read as a flat block */}
         <div className="pointer-events-none absolute -top-24 -left-24 w-72 h-72 bg-primary/[0.08] blur-[100px] rounded-full" />
         <div className="pointer-events-none absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-primary/[0.04] to-transparent" />
+
+        {/* Botón de cerrar — solo mobile, ya que en desktop el panel nunca
+            se oculta y no tiene sentido un botón de cierre. */}
+        <div className="relative flex justify-end mb-4 md:hidden">
+          <button
+            onClick={close}
+            aria-label="Cerrar menú de navegación"
+            className="w-9 h-9 rounded-xl bg-base-content/5 border border-base-content/10 flex items-center justify-center text-base-content/60 hover:text-base-content hover:bg-base-content/10 transition-all"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* ── Brand Logo Area ── */}
         <div
@@ -161,8 +192,10 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Spacer so the fixed sidebar doesn't overlap flow content. */}
-      <div className="w-64 shrink-0" aria-hidden="true" />
+      {/* Spacer so the fixed sidebar doesn't overlap flow content — solo
+          reserva espacio en `md:` y superior; en mobile el panel vive fuera
+          de pantalla y no debe robarle ancho al contenido. */}
+      <div className="hidden md:block w-64 shrink-0" aria-hidden="true" />
     </>
   );
 }
