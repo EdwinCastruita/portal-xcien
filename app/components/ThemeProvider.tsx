@@ -30,7 +30,7 @@ function getCookie(name: string) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dim");
+  const [theme, setThemeState] = useState<Theme>("dark");
   const themeOptions: Theme[] = [
     "dim",
     "obsidian",
@@ -53,7 +53,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (savedTheme && themeOptions.includes(savedTheme)) {
       setTheme(savedTheme);
     } else {
-      setTheme("dim");
+      setTheme("dark");
     }
   }, []);
 

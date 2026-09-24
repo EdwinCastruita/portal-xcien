@@ -330,32 +330,59 @@ export default function CotizacionPage() {
 
   const currentOrderId = quotation?.id ?? editingId;
 
-  const uploadContract = async () => {
+  const MAX_CONTRACT_SIZE = 50 * 1024 * 1024; // 50 MB
+  const UPLOAD_TIMEOUT_MS = 90_000; // 90s: evita que el botón quede pegado en "SUBIENDO..." para siempre
+
+  // Recibe el archivo como parámetro (en vez de leerlo solo del estado) para
+  // evitar la race condition de React: `setContractFile` es asíncrono, así
+  // que si se llama justo después de seleccionarlo, el closure aún vería el
+  // valor anterior de `contractFile`.
+  const uploadContract = async (fileArg?: File | null) => {
+    const file = fileArg ?? contractFile;
     if (!currentOrderId) return;
-    if (!contractFile)
+    if (!file)
       return toastError("Selecciona el PDF del contrato firmado");
+    if (file.size > MAX_CONTRACT_SIZE)
+      return toastError("El archivo supera el límite de 50 MB. Comprime el PDF o escanéalo en menor calidad.");
     setUploadingContract(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
     try {
       const url = new URL(
         `${API_BASE}/quotations/${currentOrderId}/contract`,
+        window.location.origin,
       );
       const session = getCookie("session_id");
       if (session) url.searchParams.set("_sid", session);
       const cid = getCookie("company_id");
       if (cid) url.searchParams.set("_cid", cid);
       const fd = new FormData();
-      fd.append("file", contractFile);
-      const res = await fetch(url.toString(), { method: "POST", body: fd });
-      const data = await res.json().catch(() => ({}));
-      if (data?.success === false)
-        throw new Error(data.message || "Operación rechazada por Odoo");
+      fd.append("file", file);
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        body: fd,
+        signal: controller.signal,
+      });
+      // Respuesta estricta: si Odoo devuelve algo que no sea JSON `success:true`
+      // (p. ej. un 303→login seguido, o un body vacío), esto debe FALLAR en
+      // vez de mostrar un toast falso de éxito.
+      const data = await res.json().catch(() => null);
+      if (!data || data.success !== true) {
+        const msg = data?.message || data?.detail || "No se pudo subir el contrato";
+        throw new Error(msg);
+      }
       setContract(data.contract);
       setContractFile(null);
       success("Contrato firmado subido con éxito");
       fetchHistory();
     } catch (err: any) {
-      toastError(err.message || "Error al subir el contrato");
+      if (err?.name === "AbortError") {
+        toastError("La subida tardó demasiado (revisa tu conexión o el peso del PDF) y se canceló");
+      } else {
+        toastError(err.message || "Error al subir el contrato");
+      }
     } finally {
+      clearTimeout(timeoutId);
       setUploadingContract(false);
     }
   };
@@ -365,6 +392,7 @@ export default function CotizacionPage() {
     try {
       const url = new URL(
         `${API_BASE}/quotations/${currentOrderId}/contract`,
+        window.location.origin,
       );
       const session = getCookie("session_id");
       if (session) url.searchParams.set("_sid", session);
@@ -996,12 +1024,19 @@ export default function CotizacionPage() {
             </div>
 
             {contract?.uploaded ? (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-                <div className="flex items-center gap-4 bg-base-300/50 border border-base-content/5 rounded-2xl px-6 py-4 flex-1 min-w-0">
+              // Nota: apilado en columna sin `sm:`/sin fila forzada — este panel
+              // vive en la columna fija de 400px del layout general
+              // (`grid lg:grid-cols-[1fr_400px]`), y los breakpoints de Tailwind
+              // reaccionan al ancho del *viewport*, no al del contenedor. En
+              // escritorio (viewport ancho) `sm:flex-row` se activaba igual y
+              // apretaba la caja del nombre de archivo hasta desbordar el texto
+              // sobre los botones.
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center gap-4 bg-base-300/50 border border-base-content/5 rounded-2xl px-6 py-4 w-full">
                   <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <FileText className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-black uppercase tracking-tight truncate">
                       {contract.filename || "contrato.pdf"}
                     </p>
@@ -1010,15 +1045,15 @@ export default function CotizacionPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col gap-3">
                   <button
                     onClick={downloadContract}
-                    className="btn btn-ghost bg-base-300/50 hover:bg-base-300 flex-1 sm:flex-none h-13 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                    className="btn btn-ghost bg-base-300/50 hover:bg-base-300 h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest w-full"
                   >
                     <Download className="w-4 h-4 mr-2" /> Descargar
                   </button>
-                  <label className="cursor-pointer flex-1 sm:flex-none">
-                    <span className="btn btn-ghost bg-base-300/50 hover:bg-base-300 h-13 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3">
+                  <label className="cursor-pointer w-full">
+                    <span className="btn btn-ghost bg-base-300/50 hover:bg-base-300 h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 w-full">
                       <UploadCloud className="w-4 h-4" /> Reemplazar
                     </span>
                     <input
@@ -1028,7 +1063,7 @@ export default function CotizacionPage() {
                       onChange={(e) => {
                         const f = e.target.files?.[0] || null;
                         setContractFile(f);
-                        if (f) uploadContract();
+                        if (f) uploadContract(f);
                         e.target.value = "";
                       }}
                     />
@@ -1036,7 +1071,7 @@ export default function CotizacionPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid md:grid-cols-[1fr_auto] gap-6 items-end">
+              <div className="flex flex-col gap-6">
                 <label className="block">
                   <span className="text-[10px] font-black text-base-content/40 uppercase tracking-widest mb-2 block">
                     Archivo PDF del contrato firmado
@@ -1056,23 +1091,36 @@ export default function CotizacionPage() {
                       accept="application/pdf,.pdf"
                       className="hidden"
                       id="contract-pdf-input"
-                      onChange={(e) =>
-                        setContractFile(e.target.files?.[0] || null)
-                      }
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        if (f && f.size > MAX_CONTRACT_SIZE) {
+                          toastError("El archivo supera el límite de 50 MB. Comprime el PDF o escanéalo en menor calidad.");
+                          e.target.value = "";
+                          return;
+                        }
+                        setContractFile(f);
+                      }}
                     />
                   </div>
                 </label>
-                <div className="flex gap-3">
+                {/* Nota: se apilan en columna (en vez de fila con `md:`) a
+                    propósito, porque este panel vive en una columna fija de
+                    400px del layout general (ver `grid lg:grid-cols-[1fr_400px]`
+                    más arriba). Los prefijos `md:`/`sm:` de Tailwind reaccionan
+                    al ancho del *viewport*, no al del contenedor, así que en
+                    escritorio forzaban una fila que no cabía en 400px y el
+                    botón "Subir contrato" quedaba desbordado fuera de la vista. */}
+                <div className="flex flex-col gap-3">
                   <label
                     htmlFor="contract-pdf-input"
-                    className="btn btn-ghost bg-base-300/50 hover:bg-base-300 h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
+                    className="btn btn-ghost bg-base-300/50 hover:bg-base-300 h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-pointer flex items-center justify-center w-full"
                   >
                     Elegir archivo
                   </label>
                   <button
-                    onClick={uploadContract}
+                    onClick={() => uploadContract()}
                     disabled={uploadingContract || !contractFile}
-                    className={`btn h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest border-none transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed ${
+                    className={`btn h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest border-none flex items-center justify-center transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed w-full ${
                       uploadingContract
                         ? "bg-primary/10 text-primary"
                         : "bg-primary text-primary-content hover:brightness-110"
@@ -1093,6 +1141,24 @@ export default function CotizacionPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {!currentOrderId && (
+          <div className="bg-base-200 rounded-[2.5rem] p-8 lg:p-12 border border-base-content/5 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-2xl bg-warning/10 flex items-center justify-center text-warning">
+                <FileSignature className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-black tracking-tight uppercase">
+                  Contrato digitalizado
+                </h3>
+                <p className="text-[10px] font-bold text-base-content/40 uppercase tracking-widest mt-1">
+                  Guarda o genera la cotización primero para poder subir el contrato firmado
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

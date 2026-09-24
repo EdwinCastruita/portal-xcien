@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -20,9 +20,14 @@ import {
   CheckCircle,
   LayoutGrid,
   Search,
+  Tag,
+  Compass,
 } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "../../../lib/api";
+import { parseLatLng, geocodeCityState } from "../../../lib/geo";
+import MapPicker from "../../../components/ui/MapPicker";
+import SmartSelector from "../../../components/ui/SmartSelector";
 
 const steps = [
   { label: "Ubicación", icon: MapPin },
@@ -131,6 +136,9 @@ export default function NuevaSolicitudPage() {
     contact_phone: "",
     city: "",
     state: "",
+    lead_lat: null as number | null,
+    lead_lng: null as number | null,
+    product_id: "" as number | "",
     plan_speed: "",
     plan_price: 0,
   });
@@ -140,6 +148,71 @@ export default function NuevaSolicitudPage() {
     checked: boolean;
     partner: any | null;
   }>({ checking: false, checked: false, partner: null });
+
+  const [products, setProducts] = useState<
+    { id: number; name: string; price: number }[]
+  >([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        setLoadingProducts(true);
+        const res = await apiFetch(`/products`, {
+          method: "POST",
+          company: true,
+        });
+        setProducts(
+          Array.isArray(res?.products)
+            ? res.products.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                price: p.list_price ?? p.price ?? 0,
+              }))
+            : [],
+        );
+      } catch (err) {
+        console.error("Error fetching products", err);
+      } finally {
+        setLoadingProducts(false);
+      }
+    }
+    fetchProducts();
+  }, []);
+
+  // Geolocalización del Step 1: al completar Estado + Ciudad, centramos el
+  // mapa ahí automáticamente (geocoding vía Nominatim/OSM). En cuanto el
+  // usuario interactúa manualmente con el mapa (clic, arrastre, pegar link,
+  // o escribir LAT/LNG) dejamos de sobreescribir su selección exacta.
+  const [geocoding, setGeocoding] = useState(false);
+  const manualPinRef = useRef(false);
+
+  useEffect(() => {
+    if (manualPinRef.current) return;
+    const city = formData.city.trim();
+    const state = formData.state.trim();
+    if (!city || !state) return;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      setGeocoding(true);
+      const coords = await geocodeCityState(city, state, controller.signal);
+      if (coords && !manualPinRef.current) {
+        setFormData((prev) => ({
+          ...prev,
+          lead_lat: coords[0],
+          lead_lng: coords[1],
+        }));
+      }
+      setGeocoding(false);
+    }, 700);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.city, formData.state]);
 
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
@@ -157,8 +230,14 @@ export default function NuevaSolicitudPage() {
     }
   };
 
-  const handleSelectPlan = (speed: string, priceNum: number) => {
-    setFormData({ ...formData, plan_speed: speed, plan_price: priceNum });
+  const handleSelectProduct = (opt: { id: number | string; name: string } | null) => {
+    const product = products.find((p) => p.id === opt?.id);
+    setFormData({
+      ...formData,
+      product_id: opt ? Number(opt.id) : "",
+      plan_speed: opt ? opt.name : "",
+      plan_price: product ? product.price : 0,
+    });
   };
 
   const verifyRFC = async () => {
@@ -196,7 +275,7 @@ export default function NuevaSolicitudPage() {
         return;
       }
     }
-    if (currentStep === 2 && !formData.plan_speed) return;
+    if (currentStep === 2 && !formData.product_id) return;
     if (currentStep === 3) {
       if (
         !formData.rfc.trim() ||
@@ -234,7 +313,7 @@ export default function NuevaSolicitudPage() {
         company: true,
         body: {
           ...formData,
-          product_id: (formData as any).product_id || undefined,
+          product_id: formData.product_id || undefined,
         },
       });
       // Siguiente paso: capturar requisitos de pre-venta (sitio/contacto/cierre)
@@ -261,6 +340,7 @@ export default function NuevaSolicitudPage() {
         body: {
           partner_id: rfcCheck.partner.id,
           business_name: rfcCheck.partner.name,
+          product_id: formData.product_id || undefined,
           plan_speed: formData.plan_speed,
           plan_price: formData.plan_price,
           contact_name: formData.contact_name,
@@ -269,6 +349,8 @@ export default function NuevaSolicitudPage() {
           city: formData.city,
           state: formData.state,
           rfc: formData.rfc,
+          lead_lat: formData.lead_lat ?? undefined,
+          lead_lng: formData.lead_lng ?? undefined,
         },
       });
       // Siguiente paso: capturar requisitos de pre-venta (sitio/contacto/cierre)
@@ -420,6 +502,86 @@ export default function NuevaSolicitudPage() {
                 error={errors.city}
               />
             </div>
+
+            {/* Geolocalización (opcional) — mismo componente que usa el
+                modal de edición de solicitudes existentes. El mapa se centra
+                solo en Estado/Ciudad; el usuario afina el punto exacto con
+                un clic o arrastrando el pin. */}
+            <div className="space-y-4">
+              <p className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
+                <Compass className="w-3 h-3" /> UBICACIÓN EXACTA (OPCIONAL)
+              </p>
+              <input
+                type="text"
+                placeholder="Pega aquí el link de Google Maps…"
+                onChange={(e) => {
+                  const c = parseLatLng(e.target.value);
+                  if (c) {
+                    manualPinRef.current = true;
+                    setFormData({ ...formData, lead_lat: c[0], lead_lng: c[1] });
+                  }
+                }}
+                className="w-full bg-base-200 border border-base-content/[0.05] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all text-base-content font-medium placeholder:text-base-content/45"
+              />
+              <MapPicker
+                lat={formData.lead_lat}
+                lng={formData.lead_lng}
+                onChange={(la, ln) => {
+                  manualPinRef.current = true;
+                  setFormData({ ...formData, lead_lat: la, lead_lng: ln });
+                }}
+              />
+              <p className="text-[9px] font-bold uppercase tracking-widest text-base-content/40 flex items-center gap-1.5 ml-1">
+                {geocoding ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" /> Buscando
+                    coordenadas de {formData.city}, {formData.state}…
+                  </>
+                ) : manualPinRef.current ? (
+                  <>
+                    <Check className="w-3 h-3 text-[var(--brand-accent)]" />{" "}
+                    Ubicación exacta confirmada
+                  </>
+                ) : formData.lead_lat != null ? (
+                  "Ubicación aproximada — haz clic en el mapa para precisarla"
+                ) : (
+                  "Selecciona Estado y Ciudad para centrar el mapa"
+                )}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="LAT"
+                  value={formData.lead_lat ?? ""}
+                  onChange={(e) => {
+                    manualPinRef.current = true;
+                    setFormData({
+                      ...formData,
+                      lead_lat:
+                        e.target.value === "" ? null : parseFloat(e.target.value),
+                    });
+                  }}
+                  className="w-full bg-base-200 border border-base-content/[0.05] rounded-2xl px-5 py-4 text-sm font-mono focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all text-base-content"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="LNG"
+                  value={formData.lead_lng ?? ""}
+                  onChange={(e) => {
+                    manualPinRef.current = true;
+                    setFormData({
+                      ...formData,
+                      lead_lng:
+                        e.target.value === "" ? null : parseFloat(e.target.value),
+                    });
+                  }}
+                  className="w-full bg-base-200 border border-base-content/[0.05] rounded-2xl px-5 py-4 text-sm font-mono focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all text-base-content"
+                />
+              </div>
+            </div>
+
             <button
               onClick={goNext}
               className="w-full btn-brand py-5 rounded-2xl transition-all duration-300 mt-10 flex items-center justify-center gap-3 font-black uppercase tracking-[0.2em] text-xs shadow-xl group"
@@ -432,7 +594,7 @@ export default function NuevaSolicitudPage() {
 
         {/* STEP 2: Plan */}
         {currentStep === 2 && (
-          <div className="max-w-5xl mx-auto space-y-10 relative py-4 animate-fade-in">
+          <div className="max-w-2xl mx-auto space-y-10 relative py-4 animate-fade-in">
             <div className="text-center mb-10">
               <div className="w-20 h-20 bg-base-content/[0.03] border border-base-content/[0.08] text-[var(--brand-accent)] rounded-3xl flex items-center justify-center mx-auto mb-6">
                 <Wifi className="w-10 h-10" />
@@ -444,97 +606,44 @@ export default function NuevaSolicitudPage() {
                 Confirmado para {formData.city}, {formData.state}
               </p>
             </div>
-            <div className="grid md:grid-cols-3 gap-6">
-              {[
-                {
-                  speed: "200",
-                  unit: "Mbps",
-                  price: "$2,500",
-                  priceNum: 2500,
-                  popular: false,
-                  feats: ["Atención 24/7", "IP Pública Fija", "SLA 99.5%"],
-                },
-                {
-                  speed: "500",
-                  unit: "Mbps",
-                  price: "$4,500",
-                  priceNum: 4500,
-                  popular: true,
-                  feats: [
-                    "Soporte Premium",
-                    "IP Pública Fija",
-                    "SD-WAN Ready",
-                    "SLA 99.9%",
-                  ],
-                },
-                {
-                  speed: "1",
-                  unit: "Gbps",
-                  price: "$7,500",
-                  priceNum: 7500,
-                  popular: false,
-                  feats: [
-                    "Atención VIP 24/7",
-                    "IP Pública Fija",
-                    "SD-WAN Pro",
-                    "SLA 99.99%",
-                  ],
-                },
-              ].map((plan, i) => {
-                const isSelected = formData.plan_speed === plan.speed;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => handleSelectPlan(plan.speed, plan.priceNum)}
-                    className={`relative rounded-3xl p-8 border text-left flex flex-col transition-all duration-500 group overflow-hidden
-                      ${isSelected ? "border-[var(--brand-accent)] bg-[var(--brand-accent)]/5 shadow-[0_0_40px_var(--brand-accent-glow)] scale-[1.05]" : "border-base-content/[0.04] bg-base-200 hover:border-base-content/[0.12]"}`}
-                  >
-                    {plan.popular && (
-                      <div className="absolute top-0 right-0">
-                        <div className="bg-[var(--brand-accent)] text-primary-content text-[9px] font-black px-6 py-1.5 uppercase tracking-widest rotate-45 translate-x-[25px] translate-y-[10px]">
-                          TOP
-                        </div>
-                      </div>
-                    )}
-                    {isSelected && (
-                      <div className="absolute top-6 left-6 w-5 h-5 bg-[var(--brand-accent)] rounded-full flex items-center justify-center">
-                        <Check className="w-3 h-3 text-primary-content" />
-                      </div>
-                    )}
-                    <div className="mt-6 mb-8">
-                      <h3 className="text-5xl font-black flex items-baseline gap-1">
-                        {plan.speed}
-                        <span className="text-lg font-black text-[var(--brand-accent)] uppercase">
-                          {plan.unit}
-                        </span>
-                      </h3>
-                      <p className="text-base-content/50 text-[9px] font-black uppercase tracking-widest mt-2">
-                        Simétrico · Dedicado
-                      </p>
-                    </div>
-                    <ul className="space-y-4 mb-10 flex-1">
-                      {plan.feats.map((f, j) => (
-                        <li
-                          key={j}
-                          className="flex items-center gap-3 text-base-content/70 text-xs font-semibold"
-                        >
-                          <Check className="w-3.5 h-3.5 text-[var(--brand-accent)]" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="pt-6 border-t border-base-content/[0.06] flex items-end gap-1">
-                      <span className="text-3xl font-black text-base-content">
-                        {plan.price}
-                      </span>
-                      <span className="text-base-content/50 text-[10px] uppercase font-black tracking-widest pb-1">
-                        /mes
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+
+            {/* Selector real de producto Odoo — mismo componente y mismo
+                endpoint (filtrado por "Accede a portal") que usa el modal
+                de edición de solicitudes existentes. */}
+            <SmartSelector
+              label="PRODUCTO / PLAN"
+              placeholder={loadingProducts ? "Cargando planes..." : "Buscar plan..."}
+              icon={Tag}
+              options={products.map((p) => ({
+                id: p.id,
+                name: p.name,
+                extra: `$${p.price.toLocaleString()}`,
+              }))}
+              selectedId={formData.product_id}
+              onSelect={handleSelectProduct}
+            />
+
+            {formData.product_id && (
+              <div className="bg-base-200 border border-[var(--brand-accent)]/20 rounded-3xl p-8 flex items-end justify-between animate-in fade-in slide-in-from-top-4">
+                <div>
+                  <p className="text-[10px] font-black text-base-content/50 uppercase tracking-widest mb-2">
+                    Plan seleccionado
+                  </p>
+                  <h3 className="text-2xl font-black uppercase tracking-tight">
+                    {formData.plan_speed}
+                  </h3>
+                </div>
+                <div className="text-right">
+                  <span className="text-4xl font-black text-base-content">
+                    ${formData.plan_price.toLocaleString()}
+                  </span>
+                  <span className="text-base-content/50 text-[10px] uppercase font-black tracking-widest pb-1 ml-1">
+                    /mes
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center pt-10 border-t border-base-content/[0.03]">
               <button
                 onClick={prevStep}
@@ -544,7 +653,7 @@ export default function NuevaSolicitudPage() {
               </button>
               <button
                 onClick={goNext}
-                disabled={!formData.plan_speed}
+                disabled={!formData.product_id}
                 className="btn-brand px-10 py-4 rounded-xl disabled:opacity-20 text-xs font-black uppercase tracking-widest shadow-xl transition-all"
               >
                 Continuar <ArrowRight className="w-4 h-4 ml-2" />
@@ -709,8 +818,8 @@ export default function NuevaSolicitudPage() {
               {[
                 {
                   label: "Servicio",
-                  title: "Plan Dedicado SIDE",
-                  value: `${formData.plan_speed} Mbps`,
+                  title: formData.plan_speed || "Plan Dedicado SIDE",
+                  value: `$${formData.plan_price.toLocaleString()} / mes`,
                   icon: Wifi,
                 },
                 {

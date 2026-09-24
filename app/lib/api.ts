@@ -7,9 +7,7 @@
 // `_sid` / `_cid`, y el cuerpo se manda como `text/plain` para que la
 // petición sea "simple" y no dispare preflight.
 
-export const API_BASE =
-  process.env.NEXT_PUBLIC_ODOO_API_BASE ??
-  "https://up17.wispi.cloud/api/portal";
+export const API_BASE = "/api/portal";
 
 export function getCookie(name: string): string {
   if (typeof document === "undefined") return "";
@@ -47,7 +45,7 @@ export async function apiFetch<T = any>(
   { method = "GET", body, company = false, signal }: ApiOptions = {},
 ): Promise<T> {
   // Añade _sid / _cid como query params (sin cabeceras => sin preflight).
-  const url = new URL(`${API_BASE}${path}`);
+  const url = new URL(`${API_BASE}${path}`, window.location.origin);
   const session = getCookie("session_id");
   if (session) url.searchParams.set("_sid", session);
   if (company) {

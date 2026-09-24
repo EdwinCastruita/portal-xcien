@@ -47,23 +47,7 @@ import MapPicker from "@/app/components/ui/MapPicker";
 import Link from "next/link";
 import { useToast } from "@/app/components/ToastContext";
 import { apiFetch, ApiError } from "@/app/lib/api";
-
-/** Extrae [lat, lng] de un link de Google Maps o de un texto "lat, lng". */
-function parseLatLng(text: string): [number, number] | null {
-  if (!text) return null;
-  const t = text.trim();
-  const patterns = [
-    /@(-?\d+\.\d+),(-?\d+\.\d+)/, // .../@19.43,-99.13,17z
-    /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/, // ...?q=19.43,-99.13
-    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // ...!3d19.43!4d-99.13
-    /^\s*(-?\d+\.\d+)\s*[, ]\s*(-?\d+\.\d+)\s*$/, // "19.43, -99.13"
-  ];
-  for (const re of patterns) {
-    const m = t.match(re);
-    if (m) return [parseFloat(m[1]), parseFloat(m[2])];
-  }
-  return null;
-}
+import { parseLatLng } from "@/app/lib/geo";
 
 /** Aplana el payload anidado de `/api/portal/solicitudes/<id>` a la forma
  *  plana (site_*, lead_*) que consume esta pantalla. */
