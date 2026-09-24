@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { apiFetch } from "../../lib/api";
+import { apiFetch, SESSION_COOKIE } from "../../lib/api";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -25,12 +25,14 @@ export default function Sidebar() {
   const handleLogout = async () => {
     try {
       await apiFetch("/logout", { method: "POST" });
-    } catch {
-      /* la sesión se limpia igual del lado cliente */
+    } catch (err) {
+      // La sesión se limpia igual del lado cliente aunque el backend falle;
+      // solo lo logueamos para poder diagnosticarlo si vuelve a pasar.
+      console.error("Error al cerrar sesión en el backend", err);
     }
     const expire = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
     [
-      "session_id",
+      SESSION_COOKIE,
       "user_name",
       "user_email",
       "company_id",

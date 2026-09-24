@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
-import { API_BASE } from "./lib/api";
+import { API_BASE, SESSION_COOKIE } from "./lib/api";
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import AnimatedLinesBackground from "./components/ui/AnimatedLinesBackground";
 
@@ -39,7 +39,7 @@ export default function LoginPage() {
       const set = (k: string, v: unknown) =>
         v != null &&
         (document.cookie = `${k}=${encodeURIComponent(String(v))}; path=/`);
-      set("session_id", data.session_id);
+      set(SESSION_COOKIE, data.session_id);
       set("company_id", data.company_id);
       set("user_name", data.name);
       set("user_email", data.email);

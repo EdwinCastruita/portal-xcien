@@ -25,7 +25,7 @@ import {
   UploadCloud,
   Zap,
 } from "lucide-react";
-import { API_BASE, apiFetch, getCookie } from "@/app/lib/api";
+import { API_BASE, apiFetch, getCookie, SESSION_COOKIE } from "@/app/lib/api";
 
 export default function CotizacionPage() {
   const params = useParams();
@@ -352,7 +352,7 @@ export default function CotizacionPage() {
         `${API_BASE}/quotations/${currentOrderId}/contract`,
         window.location.origin,
       );
-      const session = getCookie("session_id");
+      const session = getCookie(SESSION_COOKIE);
       if (session) url.searchParams.set("_sid", session);
       const cid = getCookie("company_id");
       if (cid) url.searchParams.set("_cid", cid);
@@ -394,7 +394,7 @@ export default function CotizacionPage() {
         `${API_BASE}/quotations/${currentOrderId}/contract`,
         window.location.origin,
       );
-      const session = getCookie("session_id");
+      const session = getCookie(SESSION_COOKIE);
       if (session) url.searchParams.set("_sid", session);
       const cid = getCookie("company_id");
       if (cid) url.searchParams.set("_cid", cid);

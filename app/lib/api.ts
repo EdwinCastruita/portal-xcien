@@ -9,6 +9,21 @@
 
 export const API_BASE = "/api/portal";
 
+// Nombre de la cookie propia del frontend que guarda el sid de sesión de
+// Odoo (para reenviarlo como `_sid` en cada request, ver más abajo).
+//
+// IMPORTANTE: NO puede llamarse "session_id". Ese es el nombre que Odoo usa
+// para su propia cookie de sesión (HttpOnly), y como el rewrite de
+// `next.config.ts` hace que las respuestas de Odoo lleguen al navegador como
+// same-origin, esa cookie HttpOnly termina compartiendo dominio+path con
+// cualquier cookie que el frontend intente escribir con el mismo nombre.
+// Por spec (RFC 6265), JS no puede sobrescribir ni borrar una cookie
+// HttpOnly existente — el intento simplemente se ignora en silencio. Eso
+// rompía el logout: `document.cookie = "session_id=; expires=..."` nunca
+// lograba borrar la cookie real de Odoo, así que el guard de sesión seguía
+// viéndola "presente" y rebotaba al usuario de vuelta al dashboard.
+export const SESSION_COOKIE = "portal_sid";
+
 export function getCookie(name: string): string {
   if (typeof document === "undefined") return "";
   const match = document.cookie.match(
@@ -46,7 +61,7 @@ export async function apiFetch<T = any>(
 ): Promise<T> {
   // Añade _sid / _cid como query params (sin cabeceras => sin preflight).
   const url = new URL(`${API_BASE}${path}`, window.location.origin);
-  const session = getCookie("session_id");
+  const session = getCookie(SESSION_COOKIE);
   if (session) url.searchParams.set("_sid", session);
   if (company) {
     const cid = getCookie("company_id");

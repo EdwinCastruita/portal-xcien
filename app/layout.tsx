@@ -21,6 +21,11 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "Wispi Portal",
   description: "A portal from wispi",
+  icons: {
+    icon: "/wispi-logo.png",
+    shortcut: "/wispi-logo.png",
+    apple: "/wispi-logo.png",
+  },
 };
 
 import { ThemeProvider } from "./components/ThemeProvider";

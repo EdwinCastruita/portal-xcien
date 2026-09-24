@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { User as UserIcon, LayoutGrid, Check } from "lucide-react";
 import { useBrandTheme } from "../ThemeProvider";
-import { apiFetch, getCookie } from "../../lib/api";
+import { apiFetch, getCookie, SESSION_COOKIE } from "../../lib/api";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -32,7 +32,7 @@ export default function DashboardHeader() {
   } | null>(null);
 
   useEffect(() => {
-    const sessionId = getCookie("session_id");
+    const sessionId = getCookie(SESSION_COOKIE);
     if (!sessionId) return;
 
     apiFetch("/me")

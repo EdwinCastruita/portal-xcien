@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, CheckCircle2, XCircle, Clock, RotateCw } from "lucide-react";
 import Link from "next/link";
-import { apiFetch, getCookie } from "../../lib/api";
+import { apiFetch, getCookie, SESSION_COOKIE } from "../../lib/api";
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -11,7 +11,7 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
 
   const fetchNotifs = async () => {
-    const sessionId = getCookie("session_id");
+    const sessionId = getCookie(SESSION_COOKIE);
     if (!sessionId) return;
 
     setLoading(true);
