@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   FilePlus2,
@@ -10,7 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { apiFetch, SESSION_COOKIE } from "../../lib/api";
+import { apiFetch, getCookie, SESSION_COOKIE } from "../../lib/api";
 import { useMobileSidebar } from "./MobileSidebarContext";
 
 const navItems = [
@@ -24,6 +25,17 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isOpen, close } = useMobileSidebar();
+
+  const [companyId, setCompanyId] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    setCompanyId(getCookie("company_id"));
+    setCompanyName(getCookie("company_name"));
+  }, []);
+
+  const showLogo = Boolean(companyId) && !logoError;
 
   const handleLogout = async () => {
     try {
@@ -88,24 +100,46 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* ── Brand Logo Area ── */}
+        {/* ── Brand Logo Area ──
+            Apilado en columna a propósito: el logo arriba, grande y a todo
+            el ancho disponible (se ve mejor que apretado en una fila), y el
+            texto debajo con espacio propio para extenderse/envolver cuando
+            el nombre de la compañía es largo (antes competía por ancho con
+            el logo al estar lado a lado). */}
         <div
-          className="relative px-3 mb-10 flex items-center gap-3.5 group cursor-pointer"
+          className="relative px-3 mb-10 flex flex-col gap-4 group cursor-pointer"
           onClick={() => router.push("/dashboard")}
         >
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 shadow-[0_8px_20px_-6px_var(--brand-accent-glow)]">
-            <div className="flex gap-[3px] items-end" style={{ height: "18px" }}>
-              <div className="w-[3px] h-full bg-primary-content rounded-full" />
-              <div className="w-[3px] h-[65%] bg-primary-content/70 rounded-full" />
-              <div className="w-[3px] h-[35%] bg-primary-content/40 rounded-full" />
-            </div>
+          <h1 className="text-lg font-bold tracking-tight text-base-content leading-tight">
+              Portal Comercial
+            </h1>
+          <div
+            className={`rounded-2xl flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-[1.02] ${
+              showLogo
+                ? "w-full h-28 bg-white p-4 shadow-md border border-black/5"
+                : "w-14 h-14 bg-primary shadow-[0_8px_20px_-6px_var(--brand-accent-glow)]"
+            }`}
+          >
+            
+            {showLogo ? (
+              <img
+                src={`/logo.png?company=${companyId}`}
+                alt={companyName || "Logo"}
+                className="w-full h-full object-contain"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="flex gap-[3px] items-end" style={{ height: "18px" }}>
+                <div className="w-[3px] h-full bg-primary-content rounded-full" />
+                <div className="w-[3px] h-[65%] bg-primary-content/70 rounded-full" />
+                <div className="w-[3px] h-[35%] bg-primary-content/40 rounded-full" />
+              </div>
+            )}
           </div>
           <div>
-            <h1 className="text-lg font-bold tracking-tight text-base-content leading-none">
-              Portal
-            </h1>
-            <p className="text-[9px] font-bold text-primary tracking-[0.2em] uppercase mt-1">
-              Xcien • Ventas
+            
+            <p className="text-[9px] text-center font-bold text-primary tracking-[0.2em] uppercase mt-1.5 leading-relaxed">
+              {companyName ? `${companyName}` : "Ventas"}
             </p>
           </div>
         </div>

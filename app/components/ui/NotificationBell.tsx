@@ -69,9 +69,13 @@ export default function NotificationBell() {
           <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-base-200 shadow-sm animate-pulse" />
         )}
       </label>
+      {/* `!absolute` es obligatorio aquí — ver el mismo comentario en
+          DashboardHeader.tsx: `card-premium` define `position:relative`
+          fuera de cualquier `@layer`, lo que le gana al `position:absolute`
+          de daisyUI (que sí está en una layer) sin importar especificidad. */}
       <div
         tabIndex={0}
-        className="dropdown-content z-[100] mt-4 w-80 card-premium elevate-3 p-6 overflow-hidden backdrop-blur-xl bg-opacity-95"
+        className="dropdown-content !absolute z-[100] mt-4 w-80 card-premium elevate-3 p-6 overflow-hidden backdrop-blur-xl bg-opacity-95"
       >
         <div className="flex items-center justify-between mb-6">
           <div>

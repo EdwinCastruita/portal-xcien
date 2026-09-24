@@ -91,16 +91,23 @@ export default function DashboardHeader() {
           >
             <LayoutGrid className="w-4 h-4" />
             <span className="text-[10px] font-black uppercase tracking-widest">
-              Diseño
+              Tema de colores
             </span>
             <span
               data-theme={theme}
               className="w-3 h-3 rounded-full bg-primary border border-base-content/20 shrink-0"
             />
           </label>
+          {/* `!absolute` es obligatorio: `card-premium` define `position:
+              relative` (para su pseudo-elemento decorativo) fuera de
+              cualquier `@layer` en globals.css, y por spec de CSS Cascade
+              Layers eso gana SIEMPRE sobre el `position:absolute` de
+              daisyUI (que sí vive dentro de una layer), sin importar
+              especificidad. Sin el `!`, este panel deja de flotar y en
+              vez de eso empuja todo el header hacia la derecha al abrirse. */}
           <div
             tabIndex={0}
-            className="dropdown-content z-30 card-premium elevate-3 p-3 w-64 mt-2"
+            className="dropdown-content !absolute z-30 card-premium elevate-3 p-3 w-64 mt-2"
           >
             <p className="text-[9px] font-black text-base-content/45 uppercase tracking-[0.25em] px-2 pt-1 pb-2">
               Tema visual
