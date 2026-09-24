@@ -6,9 +6,11 @@ import { useState, useRef } from "react";
 import { API_BASE, SESSION_COOKIE } from "./lib/api";
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import AnimatedLinesBackground from "./components/ui/AnimatedLinesBackground";
+import { useCurtainTransition } from "./components/ui/CurtainTransition";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { runTransition } = useCurtainTransition();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,7 +36,9 @@ export default function LoginPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.success === false) {
-        throw new Error(data.message || data.detail || "Credenciales inválidas");
+        throw new Error(
+          data.message || data.detail || "Credenciales inválidas",
+        );
       }
       const set = (k: string, v: unknown) =>
         v != null &&
@@ -45,12 +49,17 @@ export default function LoginPage() {
       set("user_email", data.email);
       set("company_name", data.company_name);
       const next = new URLSearchParams(window.location.search).get("next");
-      router.push(next && next.startsWith("/") ? next : "/dashboard");
+      // La cortina cubre la pantalla, navega detrás de ella, y luego se abre
+      // revelando el dashboard — por eso NO apagamos `isLoading` aquí: el
+      // botón se queda en su estado "Iniciando…" hasta que la cortina se
+      // cierra por completo (se ve como parte de la misma transición). Un
+      // `finally` de bloque hubiera vuelto a encenderse tras un `return`
+      // aquí adentro, así que `setIsLoading(false)` solo vive en el catch.
+      runTransition(() => {
+        router.push(next && next.startsWith("/") ? next : "/dashboard");
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Error al iniciar sesión",
-      );
-    } finally {
+      setError(err instanceof Error ? err.message : "Error al iniciar sesión");
       setIsLoading(false);
     }
   };
@@ -169,7 +178,9 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={handleShowPassword}
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    aria-label={
+                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                    }
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content/75 transition-colors"
                   >
                     {showPassword ? (

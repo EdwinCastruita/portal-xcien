@@ -45,19 +45,19 @@ export default function ActionCard({
 
       {/* Content Container */}
       <div className="relative z-10 h-full flex items-center gap-5">
-        {/* Icon Box */}
-        <div
-          className={`w-12 h-12 flex items-center justify-center rounded-2xl shrink-0 transition-all duration-500 ${!disabled && "group-hover:scale-110"}
+        {/* Icon — sin caja: el color y el tamaño hacen el trabajo que antes
+            hacía el tile redondeado. */}
+        <Icon
+          strokeWidth={1.75}
+          className={`w-8 h-8 shrink-0 transition-all duration-500 ${!disabled && "group-hover:scale-110"}
             ${
               disabled
-                ? "bg-base-content/5 text-base-content/25"
+                ? "text-base-content/25"
                 : highlight
-                  ? "bg-primary-content/10 text-primary-content border border-primary-content/20"
-                  : "bg-base-100 border border-base-content/5 text-primary shadow-sm"
+                  ? "text-primary-content"
+                  : "text-primary"
             }`}
-        >
-          <Icon className="w-5 h-5" />
-        </div>
+        />
 
         {/* Typography */}
         <div className="flex-1 min-w-0">
@@ -87,18 +87,17 @@ export default function ActionCard({
           </p>
         </div>
 
-        {/* Affordance */}
+        {/* Affordance — flecha suelta, sin caja; solo se intensifica de
+            color y se desplaza un poco al pasar el mouse. */}
         {!disabled && (
-          <div
-            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-500
+          <ArrowRight
+            className={`w-5 h-5 shrink-0 transition-all duration-500 group-hover:translate-x-1
                 ${
                   highlight
-                    ? "bg-primary-content text-primary"
-                    : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-content"
+                    ? "text-primary-content"
+                    : "text-primary/50 group-hover:text-primary"
                 }`}
-          >
-            <ArrowRight className="w-4 h-4" />
-          </div>
+          />
         )}
         {disabled && (
           <span className="text-[9px] font-black uppercase tracking-widest text-base-content/25 border border-base-content/10 rounded-full px-3 py-1.5 shrink-0">

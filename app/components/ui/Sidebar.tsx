@@ -94,7 +94,7 @@ export default function Sidebar() {
           <button
             onClick={close}
             aria-label="Cerrar menú de navegación"
-            className="w-9 h-9 rounded-xl bg-base-content/5 border border-base-content/10 flex items-center justify-center text-base-content/60 hover:text-base-content hover:bg-base-content/10 transition-all"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-base-content/60 hover:text-base-content hover:bg-base-content/10 transition-all"
           >
             <X className="w-4 h-4" />
           </button>

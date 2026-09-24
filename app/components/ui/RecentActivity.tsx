@@ -105,9 +105,10 @@ export default function RecentActivity() {
 
       {solicitudes.length === 0 ? (
         <div className="bg-base-200 border border-base-content/5 rounded-3xl p-12 text-center border-dashed group hover:border-base-content/10 transition-colors duration-500">
-          <div className="w-16 h-16 bg-base-content/5 border border-base-content/5 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:scale-110 group-hover:bg-base-content/10 transition-all duration-500">
-            <Plus className="w-7 h-7 text-base-content/30 group-hover:text-primary transition-colors" />
-          </div>
+          <Plus
+            strokeWidth={1.5}
+            className="w-10 h-10 text-base-content/30 group-hover:text-primary group-hover:scale-110 transition-all duration-500 mx-auto mb-5"
+          />
           <h3 className="text-lg font-black text-base-content uppercase tracking-tight mb-2">
             Sin actividad reciente
           </h3>
@@ -142,9 +143,10 @@ export default function RecentActivity() {
           {solicitudes.length < 6 && (
             <Link href="/solicitud/nueva" className="block group">
               <div className="h-full min-h-[176px] rounded-[1.5rem] border-2 border-dashed border-base-content/10 hover:border-primary/40 flex flex-col items-center justify-center gap-3 p-7 transition-all duration-300 hover:bg-primary/[0.03]">
-                <div className="w-11 h-11 rounded-2xl bg-base-content/5 border border-base-content/10 flex items-center justify-center text-base-content/30 group-hover:text-primary group-hover:border-primary/30 group-hover:scale-110 transition-all">
-                  <Plus className="w-5 h-5" />
-                </div>
+                <Plus
+                  strokeWidth={1.5}
+                  className="w-8 h-8 text-base-content/30 group-hover:text-primary group-hover:scale-110 transition-all"
+                />
                 <p className="text-[10px] font-black text-base-content/40 group-hover:text-primary uppercase tracking-widest transition-colors">
                   Nueva Solicitud
                 </p>

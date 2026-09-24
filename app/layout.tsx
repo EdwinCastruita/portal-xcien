@@ -30,6 +30,7 @@ export const metadata: Metadata = {
 
 import { ThemeProvider } from "./components/ThemeProvider";
 import { ToastProvider } from "./components/ToastContext";
+import { CurtainProvider } from "./components/ui/CurtainTransition";
 
 export default function RootLayout({
   children,
@@ -39,10 +40,11 @@ export default function RootLayout({
   return (
     <html lang="es" data-theme="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased `}>
+        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased `}
+      >
         <ThemeProvider>
           <ToastProvider>
-            {children}
+            <CurtainProvider>{children}</CurtainProvider>
           </ToastProvider>
         </ThemeProvider>
       </body>

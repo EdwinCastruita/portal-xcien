@@ -109,9 +109,7 @@ export default function ActivityCard({
             <div className={`w-1.5 h-1.5 rounded-full ${info.color.replace("text-", "bg-")} animate-pulse`} />
             <span className="text-[10px] font-black text-base-content/55 uppercase tracking-widest group-hover:text-base-content/80 transition-colors">Ver seguimiento</span>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-base-100 flex items-center justify-center text-primary/40 group-hover:text-primary group-hover:bg-primary/10 transition-all shadow-sm">
-            <ArrowRight className="w-4 h-4" />
-          </div>
+          <ArrowRight className="w-4 h-4 text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />
         </div>
       </div>
     </Link>

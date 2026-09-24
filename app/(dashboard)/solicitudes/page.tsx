@@ -19,7 +19,49 @@ import {
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 10;
+
+const DOTS = "…";
+
+function range(start: number, end: number): number[] {
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+}
+
+/**
+ * Ventana compacta de números de página con elipsis — sin importar cuántas
+ * páginas totales haya (25, 100...), nunca devuelve más de ~7 elementos, así
+ * que la fila de paginación nunca se desborda del contenedor.
+ * Ej: totalPages=25, currentPage=13 -> [1, "…", 12, 13, 14, "…", 25]
+ */
+function getPaginationRange(
+  currentPage: number,
+  totalPages: number,
+  siblingCount = 1,
+): (number | typeof DOTS)[] {
+  const totalPageNumbers = siblingCount * 2 + 5; // primera + última + actual + 2 vecinos + 2 elipsis
+
+  if (totalPageNumbers >= totalPages) {
+    return range(1, totalPages);
+  }
+
+  const leftSiblingIndex = Math.max(currentPage - siblingCount, 1);
+  const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPages);
+
+  const shouldShowLeftDots = leftSiblingIndex > 2;
+  const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
+
+  if (!shouldShowLeftDots && shouldShowRightDots) {
+    const leftRange = range(1, 3 + siblingCount * 2);
+    return [...leftRange, DOTS, totalPages];
+  }
+
+  if (shouldShowLeftDots && !shouldShowRightDots) {
+    const rightRange = range(totalPages - (3 + siblingCount * 2) + 1, totalPages);
+    return [1, DOTS, ...rightRange];
+  }
+
+  return [1, DOTS, ...range(leftSiblingIndex, rightSiblingIndex), DOTS, totalPages];
+}
 
 function getStageBadge(status: string) {
   const s = (status || "").toLowerCase();
@@ -89,7 +131,12 @@ export default function SolicitudesPage() {
     else setLoading(true);
     setError("");
     try {
-      const data = await apiFetch("/solicitudes?limit=250&offset=0", {
+      // Nota: la búsqueda/filtro de esta página son 100% client-side sobre
+      // este listado, por eso se trae de una sola vez en vez de paginar
+      // contra el servidor. El tope se sube bien por encima de lo que
+      // cualquier cuenta tiene hoy (se detectaron cuentas con ~250
+      // trámites) para no ocultar registros reales silenciosamente.
+      const data = await apiFetch("/solicitudes?limit=2000&offset=0", {
         company: true,
       });
       setLoadedAll(Array.isArray(data?.solicitudes) ? data.solicitudes : []);
@@ -157,7 +204,7 @@ export default function SolicitudesPage() {
               Gestión de Oportunidades
             </p>
           </div>
-          <h1 className="text-5xl font-black text-base-content tracking-tighter">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-base-content tracking-tighter">
             MIS SOLICITUDES
           </h1>
           <p className="text-sm font-bold text-base-content/40 uppercase tracking-tight">
@@ -231,9 +278,7 @@ export default function SolicitudesPage() {
       {/* ── Grid ── */}
       {paginated.length === 0 ? (
         <div className="py-32 text-center bg-base-200/50 rounded-[3rem] border-2 border-dashed border-base-content/5 flex flex-col items-center gap-6">
-          <div className="w-20 h-20 bg-base-100 rounded-3xl flex items-center justify-center opacity-20">
-            <FileText className="w-10 h-10" />
-          </div>
+          <FileText className="w-12 h-12 text-base-content/20" strokeWidth={1.5} />
           <div>
             <h3 className="text-lg font-black text-base-content/40 uppercase tracking-tight">
               Sin correspondencia
@@ -318,9 +363,10 @@ export default function SolicitudesPage() {
               invitation instead of dead air. */}
           <Link href="/solicitud/nueva" className="block group">
             <div className="h-full min-h-[176px] rounded-[1.5rem] border-2 border-dashed border-base-content/10 hover:border-primary/40 flex flex-col items-center justify-center gap-3 p-7 transition-all duration-300 hover:bg-primary/[0.03]">
-              <div className="w-11 h-11 rounded-2xl bg-base-content/5 border border-base-content/10 flex items-center justify-center text-base-content/30 group-hover:text-primary group-hover:border-primary/30 group-hover:scale-110 transition-all">
-                <Plus className="w-5 h-5" />
-              </div>
+              <Plus
+                strokeWidth={1.5}
+                className="w-8 h-8 text-base-content/30 group-hover:text-primary group-hover:scale-110 transition-all"
+              />
               <p className="text-[10px] font-black text-base-content/40 group-hover:text-primary uppercase tracking-widest transition-colors">
                 Nueva Solicitud
               </p>
@@ -340,29 +386,41 @@ export default function SolicitudesPage() {
             </span>{" "}
             de {filtered.length}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="btn btn-ghost bg-base-200 p-0 w-12 h-12 rounded-2xl disabled:opacity-20"
+              className="btn btn-ghost bg-base-200 p-0 w-12 h-12 rounded-2xl disabled:opacity-20 shrink-0"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="flex gap-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`w-12 h-12 rounded-2xl text-[10px] font-black transition-all ${page === p ? "chip-selected scale-105" : "bg-base-200 border border-transparent text-base-content/45 hover:text-base-content"}`}
-                >
-                  {p}
-                </button>
-              ))}
+            {/* Ventana compacta con elipsis — nunca renderiza más de ~7
+                elementos sin importar cuántas páginas totales haya (25,
+                100...), así que jamás se desborda del contenedor. */}
+            <div className="flex flex-wrap justify-center gap-2">
+              {getPaginationRange(page, totalPages).map((p, i) =>
+                p === DOTS ? (
+                  <span
+                    key={`dots-${i}`}
+                    className="w-12 h-12 flex items-center justify-center text-base-content/30 text-sm font-black select-none"
+                  >
+                    {DOTS}
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p as number)}
+                    className={`w-12 h-12 rounded-2xl text-[10px] font-black transition-all shrink-0 ${page === p ? "chip-selected scale-105" : "bg-base-200 border border-transparent text-base-content/45 hover:text-base-content"}`}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
             </div>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="btn btn-ghost bg-base-200 p-0 w-12 h-12 rounded-2xl disabled:opacity-20"
+              className="btn btn-ghost bg-base-200 p-0 w-12 h-12 rounded-2xl disabled:opacity-20 shrink-0"
             >
               <ChevronRight className="w-5 h-5" />
             </button>

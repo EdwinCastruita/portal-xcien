@@ -392,10 +392,11 @@ export default function SolicitudDetallePage() {
   if (error || !solicitud) {
     return (
       <div className="max-w-2xl mx-auto py-24 text-base-content text-center animate-fade-in">
-        <div className="w-32 h-32 rounded-[40px] bg-base-content/[0.02] border border-base-content/5 flex items-center justify-center mx-auto mb-10 group">
-          <AlertTriangle className="w-12 h-12 text-base-content/40 group-hover:text-error transition-colors" />
-        </div>
-        <h1 className="text-4xl font-black uppercase tracking-tighter mb-4 leading-none">
+        <AlertTriangle
+          strokeWidth={1.5}
+          className="w-16 h-16 text-base-content/30 mx-auto mb-10"
+        />
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter mb-4 leading-tight sm:leading-none">
           REGISTRO NO ENCONTRADO
         </h1>
         <p className="text-base-content/50 text-[10px] font-black uppercase tracking-[0.2em] mb-12">
@@ -554,10 +555,8 @@ export default function SolicitudDetallePage() {
       {/* ─── Pre-Sale Requirements Checklist ─── */}
       {isCapture && !isWaiting && (
           <div className="bg-base-200 rounded-[40px] p-8 border border-base-content/5 mb-10 shadow-2xl relative overflow-hidden group">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-(--brand-accent)/10 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-6 h-6 text-(--brand-accent)" />
-              </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 mb-6">
+              <CheckCircle2 className="w-7 h-7 text-(--brand-accent) shrink-0" strokeWidth={1.75} />
               <div className="flex-1">
                 <h3 className="text-xl font-black tracking-tight">
                   Completa la oportunidad
@@ -654,12 +653,12 @@ export default function SolicitudDetallePage() {
 
       {/* ─── External Waiting State (Ing/Habil/Fact) ─── */}
       {(isPreVenta || isWaitingExternal) && (
-        <div className="bg-(--brand-accent)/10 border border-(--brand-accent)/20 p-10 rounded-[40px] flex flex-col md:flex-row items-center gap-10 animate-slide-in-up">
-          <div className="w-24 h-24 rounded-[32px] bg-(--brand-accent) flex items-center justify-center shadow-[0_0_40px_var(--brand-accent-glow)]">
-            <Loader2 className="w-12 h-12 text-primary-content animate-spin" />
+        <div className="bg-(--brand-accent)/10 border border-(--brand-accent)/20 p-6 sm:p-8 md:p-10 rounded-[40px] flex flex-col md:flex-row items-center gap-6 md:gap-10 animate-slide-in-up">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-[32px] bg-(--brand-accent) flex items-center justify-center shadow-[0_0_40px_var(--brand-accent-glow)] shrink-0">
+            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-primary-content animate-spin" />
           </div>
           <div className="flex-1 space-y-3 text-center md:text-left">
-            <h3 className="text-3xl font-black uppercase tracking-tighter leading-none">
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tighter leading-tight md:leading-none">
               {isPreVenta
                 ? "A LA ESPERA DE INGENIERÍA"
                 : `PROCESANDO ${normalizedStatus.toUpperCase()}`}
@@ -702,12 +701,13 @@ export default function SolicitudDetallePage() {
         <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-md flex justify-end animate-fade-in">
           <div className="w-full max-w-2xl h-full bg-base-300 border-l border-base-content/10 shadow-[0_0_150px_rgba(0,0,0,1)] p-6 md:p-12 overflow-y-auto animate-slide-in-from-right">
             <div className="flex items-start justify-between gap-6 mb-12">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-3xl bg-base-content/5 border border-base-content/10 flex items-center justify-center">
-                  <Briefcase className="w-8 h-8 text-(--brand-accent)" />
+              <div className="flex items-center gap-5">
+                <div className="relative w-14 h-14 shrink-0 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-(--brand-accent)/15 blur-2xl rounded-full" />
+                  <Briefcase className="relative w-9 h-9 text-(--brand-accent)" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="text-4xl font-black uppercase tracking-tighter">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter">
                     OPORTUNIDAD
                   </h2>
                   <p className="text-base-content/50 text-[10px] font-black uppercase tracking-[0.2em] mt-2">
@@ -717,15 +717,15 @@ export default function SolicitudDetallePage() {
               </div>
               <button
                 onClick={() => setShowOpportunityEditor(false)}
-                className="w-12 h-12 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors"
+                className="w-12 h-12 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors shrink-0"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             <div className="space-y-10">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2 col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2 sm:col-span-2">
                   <p className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em] mb-2 ml-1">
                     Razón social
                   </p>
@@ -793,7 +793,7 @@ export default function SolicitudDetallePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-6 bg-base-content/[0.02] p-8 rounded-[32px] border border-base-content/5 shadow-inner">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-base-content/[0.02] p-5 sm:p-8 rounded-[32px] border border-base-content/5 shadow-inner">
                 <div className="space-y-2">
                   <p className="text-[9px] font-black text-base-content/50 uppercase tracking-widest mb-1">
                     Nombre Display Plan
@@ -806,11 +806,11 @@ export default function SolicitudDetallePage() {
                     className="w-full bg-transparent border-b border-base-content/10 px-0 py-3 text-base-content text-lg font-black uppercase focus:border-(--brand-accent) transition-all outline-none"
                   />
                 </div>
-                <div className="space-y-2 text-right">
+                <div className="space-y-2 text-left sm:text-right">
                   <p className="text-[9px] font-black text-base-content/50 uppercase tracking-widest mb-1">
                     Inversión Mensual
                   </p>
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-start sm:justify-end gap-2">
                     <span className="text-base-content/50 text-xl font-black">$</span>
                     <input
                       type="number"
@@ -926,11 +926,12 @@ export default function SolicitudDetallePage() {
           <div className="w-full max-w-lg h-full bg-base-300 border-l border-base-content/10 shadow-[0_0_150px_rgba(0,0,0,1)] p-6 md:p-12 overflow-y-auto animate-slide-in-from-right">
             <div className="flex items-start justify-between gap-6 mb-12">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-base-content/5 border border-base-content/10 flex items-center justify-center">
-                  <User className="w-7 h-7 text-(--brand-accent)" />
+                <div className="relative w-14 h-14 shrink-0 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-(--brand-accent)/15 blur-2xl rounded-full" />
+                  <User className="relative w-8 h-8 text-(--brand-accent)" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black uppercase tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">
                     CONTACTO
                   </h2>
                   <p className="text-base-content/50 text-[10px] font-black uppercase tracking-[0.2em] mt-2">
@@ -1017,12 +1018,12 @@ export default function SolicitudDetallePage() {
               </button>
             </div>
 
-            <div className="flex items-center gap-6 mb-12">
-              <div className="w-20 h-20 rounded-[32px] bg-gradient-to-br from-(--brand-accent) to-(--brand-accent-glow) flex items-center justify-center shadow-[0_0_50px_var(--brand-accent-glow)]">
-                <MapPin className="w-10 h-10 text-primary-content" />
+            <div className="flex items-center gap-4 sm:gap-6 mb-12">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-[28px] md:rounded-[32px] bg-gradient-to-br from-(--brand-accent) to-(--brand-accent-glow) flex items-center justify-center shadow-[0_0_50px_var(--brand-accent-glow)] shrink-0">
+                <MapPin className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-primary-content" />
               </div>
               <div>
-                <h2 className="text-5xl font-black uppercase tracking-tighter leading-none">
+                <h2 className="text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight md:leading-none">
                   DATOS DE SITIO
                 </h2>
                 <p className="text-base-content/50 text-[10px] font-black uppercase tracking-[0.2em] mt-3">
@@ -1277,9 +1278,9 @@ export default function SolicitudDetallePage() {
       {/* ─── Delete Confirmation Modal ─── */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-100 flex items-center justify-center p-6 animate-fade-in">
-          <div className="bg-base-200 rounded-[40px] p-12 border border-base-content/10 max-w-md w-full shadow-[0_0_100px_rgba(0,0,0,0.8)] animate-slide-in-up relative overflow-hidden">
+          <div className="bg-base-200 rounded-[40px] p-8 sm:p-12 border border-base-content/10 max-w-md w-full shadow-[0_0_100px_rgba(0,0,0,0.8)] animate-slide-in-up relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-error" />
-            <h3 className="text-3xl font-black uppercase tracking-tighter mb-4 text-center leading-none">
+            <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter mb-4 text-center leading-tight sm:leading-none">
               ¿ESTÁ SEGURO?
             </h3>
             <p className="text-base-content/55 text-[10px] font-black uppercase tracking-[0.2em] mb-12 text-center leading-relaxed">
@@ -1314,12 +1315,12 @@ export default function SolicitudDetallePage() {
         {/* INFO COLUMN */}
         <div className="lg:col-span-2 space-y-10">
           {/* ─── Odoo-style Opportunity Details ─── */}
-          <div className="bg-base-200 rounded-[40px] p-10 border border-base-content/5 relative overflow-hidden shadow-2xl transition-all hover:bg-base-300 group">
+          <div className="bg-base-200 rounded-[40px] p-6 sm:p-8 md:p-10 border border-base-content/5 relative overflow-hidden shadow-2xl transition-all hover:bg-base-300 group">
             <div className="absolute top-0 right-0 w-96 h-96 bg-(--brand-accent)/5 blur-[120px] rounded-full pointer-events-none" />
 
-            <div className="flex flex-col gap-10 relative z-10">
+            <div className="flex flex-col gap-6 sm:gap-10 relative z-10">
               {/* Header: Name and Metrics */}
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-3 opacity-20 transition-opacity group-hover:opacity-40">
                   <div className="h-0.5 w-12 bg-base-content rounded-full" />
                   <h3 className="text-[10px] font-black uppercase tracking-[0.4em]">
@@ -1327,12 +1328,12 @@ export default function SolicitudDetallePage() {
                   </h3>
                 </div>
 
-                <h2 className="text-4xl font-black uppercase tracking-tighter leading-none text-base-content/90">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter leading-tight md:leading-none text-base-content/90 break-words">
                   {solicitud.business_name}
                 </h2>
 
-                <div className="grid grid-cols-2 gap-8 pt-6 border-t border-base-content/5">
-                  <div className="bg-base-content/[0.02] border border-base-content/5 rounded-3xl p-8 group hover:border-(--brand-accent)/40 transition-all duration-500 relative overflow-hidden">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 pt-6 border-t border-base-content/5">
+                  <div className="bg-base-content/[0.02] border border-base-content/5 rounded-3xl p-5 sm:p-6 md:p-8 group hover:border-(--brand-accent)/40 transition-all duration-500 relative overflow-hidden">
                     <div className="absolute -top-10 -right-10 w-24 h-24 bg-(--brand-accent)/5 blur-2xl rounded-full" />
                     <p className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em] mb-3">
                       Ingreso Estimado
@@ -1341,7 +1342,7 @@ export default function SolicitudDetallePage() {
                       <span className="text-xl font-black text-(--brand-accent)/40">
                         $
                       </span>
-                      <p className="text-4xl font-black text-base-content tracking-tighter">
+                      <p className="text-2xl sm:text-3xl md:text-4xl font-black text-base-content tracking-tighter">
                         {solicitud.plan_price?.toLocaleString() || "0.00"}
                       </p>
                       <span className="text-[10px] font-black text-base-content/50 uppercase ml-1">
@@ -1350,27 +1351,26 @@ export default function SolicitudDetallePage() {
                     </div>
                   </div>
 
-                  <div className="bg-base-content/[0.02] border border-base-content/5 rounded-3xl p-8 group hover:border-info/40 transition-all duration-500 relative overflow-hidden">
+                  <div className="bg-base-content/[0.02] border border-base-content/5 rounded-3xl p-5 sm:p-6 md:p-8 group hover:border-info/40 transition-all duration-500 relative overflow-hidden">
                     <div className="absolute -top-10 -right-10 w-24 h-24 bg-info/5 blur-2xl rounded-full" />
                     <p className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em] mb-3">
                       Probabilidad
                     </p>
                     <div className="flex items-center justify-between">
-                      <p className="text-4xl font-black text-base-content tracking-tighter">
+                      <p className="text-2xl sm:text-3xl md:text-4xl font-black text-base-content tracking-tighter">
                         {solicitud.probability || 0}
                         <span className="text-lg text-base-content/50 ml-1">%</span>
                       </p>
-                      <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+                      <Target
+                        strokeWidth={1.75}
+                        className={`w-7 h-7 ${
                           solicitud.probability >= 80
-                            ? "bg-success/10 border-success/20 text-success"
+                            ? "text-success"
                             : solicitud.probability >= 50
-                              ? "bg-info/10 border-info/20 text-info"
-                              : "bg-(--brand-accent)/10 border-(--brand-accent)/20 text-(--brand-accent)"
+                              ? "text-info"
+                              : "text-(--brand-accent)"
                         }`}
-                      >
-                        <Target className="w-5 h-5" />
-                      </div>
+                      />
                     </div>
                   </div>
                 </div>
@@ -1617,9 +1617,10 @@ export default function SolicitudDetallePage() {
                       </button>
                     </div>
                   </div>
-                  <div className="w-14 h-14 rounded-2xl bg-neutral text-neutral-content border border-base-content/5 flex items-center justify-center group-hover/crm:bg-primary group-hover/crm:text-primary-content transition-colors relative z-10">
-                    <Briefcase className="w-7 h-7" />
-                  </div>
+                  <Briefcase
+                    strokeWidth={1.5}
+                    className="w-9 h-9 text-base-content/35 group-hover/crm:text-primary transition-colors relative z-10"
+                  />
                 </div>
 
                 <div className="flex items-center justify-between p-7 rounded-3xl bg-base-content/[0.02] border border-base-content/5">
@@ -1631,9 +1632,7 @@ export default function SolicitudDetallePage() {
                       {solicitud.lead_stage || "PROSPECCIÓN"}
                     </p>
                   </div>
-                  <div className="w-14 h-14 rounded-2xl bg-base-content/5 flex items-center justify-center">
-                    <Tag className="w-7 h-7 text-base-content/50" />
-                  </div>
+                  <Tag className="w-9 h-9 text-base-content/35" strokeWidth={1.5} />
                 </div>
               </div>
             </div>

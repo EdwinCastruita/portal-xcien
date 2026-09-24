@@ -122,9 +122,7 @@ export default function SmartSelector({
               ))
             ) : (
               <div className="px-6 py-12 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-base-content/[0.03] flex items-center justify-center mx-auto mb-4 border border-base-content/5">
-                    <Search className="w-6 h-6 text-base-content/40" />
-                </div>
+                <Search className="w-8 h-8 text-base-content/30 mx-auto mb-4" strokeWidth={1.5} />
                 <p className="text-[10px] font-black text-base-content/45 uppercase tracking-widest">No se encontraron resultados</p>
               </div>
             )}

@@ -60,7 +60,7 @@ export default function NotificationBell() {
       <label
         tabIndex={0}
         onClick={markAllSeen}
-        className="btn btn-ghost bg-base-200 border-none rounded-2xl h-14 w-14 p-0 flex items-center justify-center relative active:scale-95 transition-all elevate-1"
+        className="btn btn-ghost bg-transparent border-none rounded-full h-14 w-14 p-0 flex items-center justify-center relative active:scale-95 hover:bg-base-content/10 transition-all"
       >
         <Bell
           className={`w-5 h-5 ${unreadCount > 0 ? "text-primary" : "text-base-content/40"}`}
@@ -105,9 +105,7 @@ export default function NotificationBell() {
         <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
           {notifications.length === 0 ? (
             <div className="py-12 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-base-100 border border-base-content/5 flex items-center justify-center mx-auto mb-4 opacity-20">
-                <Bell className="w-6 h-6" />
-              </div>
+              <Bell className="w-8 h-8 text-base-content/25 mx-auto mb-4" strokeWidth={1.5} />
               <p className="text-[10px] font-black text-base-content/45 uppercase tracking-widest leading-relaxed">
                 Sin actividad reciente
                 <br />
@@ -130,23 +128,13 @@ export default function NotificationBell() {
                       : "bg-transparent border-transparent hover:bg-base-100/50"
                   }`}
                 >
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      n.type === "success"
-                        ? "bg-success/10 text-success"
-                        : n.type === "error"
-                          ? "bg-error/10 text-error"
-                          : "bg-primary/10 text-primary"
-                    }`}
-                  >
-                    {n.type === "success" ? (
-                      <CheckCircle2 className="w-5 h-5" />
-                    ) : n.type === "error" ? (
-                      <XCircle className="w-5 h-5" />
-                    ) : (
-                      <Bell className="w-5 h-5" />
-                    )}
-                  </div>
+                  {n.type === "success" ? (
+                    <CheckCircle2 className="w-6 h-6 text-success shrink-0 mt-0.5" />
+                  ) : n.type === "error" ? (
+                    <XCircle className="w-6 h-6 text-error shrink-0 mt-0.5" />
+                  ) : (
+                    <Bell className="w-6 h-6 text-primary shrink-0 mt-0.5" />
+                  )}
                   <div className="space-y-1 overflow-hidden">
                     <p
                       className={`text-[9px] font-black uppercase tracking-widest leading-none mb-1.5 ${

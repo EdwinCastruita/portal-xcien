@@ -380,7 +380,7 @@ export default function NuevaSolicitudPage() {
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
             </Link>
-            <h1 className="text-5xl font-black text-base-content uppercase tracking-tighter leading-none mb-1">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-base-content uppercase tracking-tighter leading-tight sm:leading-none mb-1">
               NUEVA SOLICITUD
             </h1>
             <p className="text-base-content/60 text-xs font-medium uppercase tracking-[0.1em]">
@@ -403,7 +403,16 @@ export default function NuevaSolicitudPage() {
             }}
           />
 
-          <div className="relative flex justify-between items-center w-full">
+          {/* `grid grid-cols-5` en vez de `flex justify-between`: fuerza
+              columnas de ancho IGUAL. Con flex, cada "columna" media según
+              su contenido (el label más largo, "Confirmación", mide más de
+              lo que le toca en un reparto de 375px/5 ≈ 65px), así que los
+              labels vecinos se traslapaban en mobile. Los labels individuales
+              además se ocultan por debajo de `sm:` (aparecen solo desde
+              tablet en adelante, donde sí hay espacio) — en mobile se
+              reemplazan por un único caption centrado debajo de todo el
+              stepper (ver más abajo). */}
+          <div className="relative grid grid-cols-5 items-center w-full">
             {steps.map((step, index) => {
               const stepNum = index + 1;
               const isActive = stepNum === currentStep;
@@ -413,25 +422,25 @@ export default function NuevaSolicitudPage() {
               return (
                 <div
                   key={stepNum}
-                  className="flex flex-col items-center gap-4 group"
+                  className="flex flex-col items-center gap-2 sm:gap-4 group"
                 >
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 relative z-10
-                      ${isActive ? "bg-[var(--brand-accent)] text-primary-content scale-125 shadow-[0_0_25px_var(--brand-accent-glow)] rotate-3" : ""}
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-500 relative z-10
+                      ${isActive ? "bg-[var(--brand-accent)] text-primary-content scale-110 sm:scale-125 shadow-[0_0_25px_var(--brand-accent-glow)] rotate-3" : ""}
                       ${isCompleted ? "bg-base-200 text-[var(--brand-accent)] border border-[var(--brand-accent)]/30" : ""}
                       ${!isActive && !isCompleted ? "bg-base-200 border border-base-content/[0.05] text-base-content/45" : ""}
                     `}
                   >
                     {isCompleted ? (
-                      <Check className="w-5 h-5" />
+                      <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                     ) : (
                       <StepIcon
-                        className={`w-5 h-5 ${isActive ? "animate-pulse" : ""}`}
+                        className={`w-4 h-4 sm:w-5 sm:h-5 ${isActive ? "animate-pulse" : ""}`}
                       />
                     )}
                   </div>
                   <span
-                    className={`text-[9px] font-black uppercase tracking-widest transition-all duration-500
+                    className={`hidden sm:block text-[9px] font-black uppercase tracking-widest transition-all duration-500
                       ${isActive ? "text-base-content translate-y-1" : isCompleted ? "text-base-content/65" : "text-base-content/45"}
                     `}
                   >
@@ -441,11 +450,17 @@ export default function NuevaSolicitudPage() {
               );
             })}
           </div>
+
+          {/* Caption solo mobile — reemplaza los labels individuales
+              ocultados arriba, sin competir por espacio horizontal. */}
+          <p className="sm:hidden text-center mt-4 text-[10px] font-black uppercase tracking-widest text-base-content/60">
+            Paso {currentStep} de {steps.length} · {steps[currentStep - 1].label}
+          </p>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="bg-base-200 rounded-3xl p-10 min-h-[520px] border border-base-content/[0.04] relative overflow-hidden shadow-2xl animate-slide-in-up">
+      <div className="bg-base-200 rounded-3xl p-5 sm:p-8 md:p-10 min-h-[520px] border border-base-content/[0.04] relative overflow-hidden shadow-2xl animate-slide-in-up">
         <div
           className="absolute inset-0 opacity-[0.02] pointer-events-none"
           style={{
@@ -459,10 +474,14 @@ export default function NuevaSolicitudPage() {
         {currentStep === 1 && (
           <div className="max-w-xl mx-auto space-y-8 pt-8 relative animate-fade-in">
             <div className="text-center mb-10">
-              <div className="w-20 h-20 bg-base-content/[0.03] border border-base-content/[0.08] text-[var(--brand-accent)] rounded-3xl flex items-center justify-center mx-auto mb-6 group transition-all duration-500 hover:rotate-6">
-                <MapPin className="w-10 h-10 group-hover:scale-110 transition-transform" />
+              <div className="relative w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 flex items-center justify-center group">
+                <div className="absolute inset-0 bg-[var(--brand-accent)]/10 blur-2xl rounded-full" />
+                <MapPin
+                  strokeWidth={1.5}
+                  className="relative w-8 h-8 sm:w-11 sm:h-11 text-[var(--brand-accent)] transition-all duration-500 group-hover:scale-110 group-hover:rotate-6"
+                />
               </div>
-              <h2 className="text-3xl font-black mb-3 uppercase tracking-tighter text-base-content">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black mb-3 uppercase tracking-tighter text-base-content">
                 UBICACIÓN
               </h2>
               <p className="text-base-content/60 text-[10px] font-black uppercase tracking-[0.2em] max-w-sm mx-auto">
@@ -596,10 +615,11 @@ export default function NuevaSolicitudPage() {
         {currentStep === 2 && (
           <div className="max-w-2xl mx-auto space-y-10 relative py-4 animate-fade-in">
             <div className="text-center mb-10">
-              <div className="w-20 h-20 bg-base-content/[0.03] border border-base-content/[0.08] text-[var(--brand-accent)] rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <Wifi className="w-10 h-10" />
+              <div className="relative w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 flex items-center justify-center">
+                <div className="absolute inset-0 bg-[var(--brand-accent)]/10 blur-2xl rounded-full" />
+                <Wifi strokeWidth={1.5} className="relative w-8 h-8 sm:w-11 sm:h-11 text-[var(--brand-accent)]" />
               </div>
-              <h2 className="text-3xl font-black mb-3 uppercase tracking-tighter">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black mb-3 uppercase tracking-tighter">
                 SELECCIONA TU PLAN
               </h2>
               <p className="text-base-content/60 text-[10px] font-black uppercase tracking-[0.25em]">
@@ -624,17 +644,17 @@ export default function NuevaSolicitudPage() {
             />
 
             {formData.product_id && (
-              <div className="bg-base-200 border border-[var(--brand-accent)]/20 rounded-3xl p-8 flex items-end justify-between animate-in fade-in slide-in-from-top-4">
-                <div>
+              <div className="bg-base-200 border border-[var(--brand-accent)]/20 rounded-3xl p-5 sm:p-8 flex flex-col sm:flex-row sm:items-end justify-between gap-3 animate-in fade-in slide-in-from-top-4">
+                <div className="min-w-0">
                   <p className="text-[10px] font-black text-base-content/50 uppercase tracking-widest mb-2">
                     Plan seleccionado
                   </p>
-                  <h3 className="text-2xl font-black uppercase tracking-tight">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-black uppercase tracking-tight break-words">
                     {formData.plan_speed}
                   </h3>
                 </div>
-                <div className="text-right">
-                  <span className="text-4xl font-black text-base-content">
+                <div className="text-left sm:text-right shrink-0">
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-black text-base-content">
                     ${formData.plan_price.toLocaleString()}
                   </span>
                   <span className="text-base-content/50 text-[10px] uppercase font-black tracking-widest pb-1 ml-1">
@@ -644,7 +664,7 @@ export default function NuevaSolicitudPage() {
               </div>
             )}
 
-            <div className="flex justify-between items-center pt-10 border-t border-base-content/[0.03]">
+            <div className="flex flex-wrap justify-between items-center gap-4 pt-10 border-t border-base-content/[0.03]">
               <button
                 onClick={prevStep}
                 className="flex items-center gap-2 text-base-content/50 hover:text-base-content text-[10px] font-black uppercase tracking-widest transition-all"
@@ -654,7 +674,7 @@ export default function NuevaSolicitudPage() {
               <button
                 onClick={goNext}
                 disabled={!formData.product_id}
-                className="btn-brand px-10 py-4 rounded-xl disabled:opacity-20 text-xs font-black uppercase tracking-widest shadow-xl transition-all"
+                className="btn-brand px-6 sm:px-10 py-4 rounded-xl disabled:opacity-20 text-xs font-black uppercase tracking-widest shadow-xl transition-all"
               >
                 Continuar <ArrowRight className="w-4 h-4 ml-2" />
               </button>
@@ -666,10 +686,14 @@ export default function NuevaSolicitudPage() {
         {currentStep === 3 && (
           <div className="max-w-4xl mx-auto space-y-12 relative py-4 animate-fade-in">
             <div className="text-center mb-10">
-              <div className="w-20 h-20 bg-base-content/[0.03] border border-base-content/[0.08] text-[var(--brand-accent)] rounded-3xl flex items-center justify-center mx-auto mb-6 group transition-all duration-500 hover:rotate-12">
-                <User className="w-10 h-10" />
+              <div className="relative w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 flex items-center justify-center group">
+                <div className="absolute inset-0 bg-[var(--brand-accent)]/10 blur-2xl rounded-full" />
+                <User
+                  strokeWidth={1.5}
+                  className="relative w-8 h-8 sm:w-11 sm:h-11 text-[var(--brand-accent)] transition-transform duration-500 group-hover:rotate-12"
+                />
               </div>
-              <h2 className="text-3xl font-black mb-3 uppercase tracking-tighter">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black mb-3 uppercase tracking-tighter">
                 DATOS DE NEGOCIO
               </h2>
               <p className="text-base-content/60 text-[10px] font-black uppercase tracking-[0.25em]">
@@ -679,10 +703,8 @@ export default function NuevaSolicitudPage() {
 
             <div className="grid md:grid-cols-2 gap-10">
               <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-xl bg-base-content/[0.03] border border-base-content/[0.05] flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-[var(--brand-accent)]" />
-                  </div>
+                <div className="flex items-center gap-2.5 mb-2">
+                  <Building2 className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={1.75} />
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-base-content/65">
                     Datos Fiscales
                   </h3>
@@ -745,10 +767,8 @@ export default function NuevaSolicitudPage() {
                 </div>
               </div>
               <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-xl bg-base-content/[0.03] border border-base-content/[0.05] flex items-center justify-center">
-                    <User className="w-4 h-4 text-[var(--brand-accent)]" />
-                  </div>
+                <div className="flex items-center gap-2.5 mb-2">
+                  <User className="w-5 h-5 text-[var(--brand-accent)]" strokeWidth={1.75} />
                   <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-base-content/65">
                     Contacto Directo
                   </h3>
@@ -783,7 +803,7 @@ export default function NuevaSolicitudPage() {
                 />
               </div>
             </div>
-            <div className="flex justify-between items-center pt-10 border-t border-base-content/[0.03]">
+            <div className="flex flex-wrap justify-between items-center gap-4 pt-10 border-t border-base-content/[0.03]">
               <button
                 onClick={prevStep}
                 className="flex items-center gap-2 text-base-content/50 hover:text-base-content text-[10px] font-black uppercase tracking-widest transition-all"
@@ -792,7 +812,7 @@ export default function NuevaSolicitudPage() {
               </button>
               <button
                 onClick={goNext}
-                className="btn-brand px-12 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-[0_20px_40px_var(--brand-accent-glow)] transition-all flex items-center gap-3"
+                className="btn-brand px-7 sm:px-12 py-4 sm:py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-[0_20px_40px_var(--brand-accent-glow)] transition-all flex items-center gap-3"
               >
                 Continuar <ArrowRight className="w-4 h-4" />
               </button>
@@ -804,10 +824,11 @@ export default function NuevaSolicitudPage() {
         {currentStep === 4 && (
           <div className="max-w-4xl mx-auto space-y-10 relative py-4 animate-fade-in">
             <div className="text-center mb-10">
-              <div className="w-20 h-20 bg-base-content/[0.03] border border-base-content/[0.08] text-[var(--brand-accent)] rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <FileText className="w-10 h-10" />
+              <div className="relative w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 flex items-center justify-center">
+                <div className="absolute inset-0 bg-[var(--brand-accent)]/10 blur-2xl rounded-full" />
+                <FileText strokeWidth={1.5} className="relative w-8 h-8 sm:w-11 sm:h-11 text-[var(--brand-accent)]" />
               </div>
-              <h2 className="text-3xl font-black mb-3 uppercase tracking-tighter">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black mb-3 uppercase tracking-tighter">
                 RESUMEN
               </h2>
               <p className="text-base-content/60 text-[10px] font-black uppercase tracking-[0.25em]">
@@ -845,10 +866,8 @@ export default function NuevaSolicitudPage() {
                   key={i}
                   className="bg-base-200 border border-base-content/[0.04] rounded-3xl p-8 group hover:border-[var(--brand-accent)]/30 transition-all duration-500"
                 >
-                  <div className="flex items-start gap-5">
-                    <div className="w-12 h-12 rounded-2xl bg-base-content/[0.03] border border-base-content/[0.05] flex items-center justify-center">
-                      <item.icon className="w-5 h-5 text-[var(--brand-accent)]" />
-                    </div>
+                  <div className="flex items-start gap-4">
+                    <item.icon className="w-7 h-7 text-[var(--brand-accent)] shrink-0" strokeWidth={1.75} />
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-base-content/50 mb-2">
                         {item.label}
@@ -864,14 +883,14 @@ export default function NuevaSolicitudPage() {
                 </div>
               ))}
             </div>
-            <div className="bg-base-200 border border-base-content/[0.04] rounded-3xl p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+            <div className="bg-base-200 border border-base-content/[0.04] rounded-3xl p-5 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 relative overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--brand-accent)]" />
               <div>
                 <h4 className="text-base-content/50 text-[10px] font-black uppercase tracking-[0.3em] mb-2">
                   Inversión Mensual
                 </h4>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-base-content">
+                  <span className="text-3xl sm:text-4xl md:text-5xl font-black text-base-content">
                     ${formData.plan_price.toLocaleString()}
                   </span>
                   <span className="text-base-content/50 text-xs font-black uppercase tracking-widest pb-1">
@@ -885,7 +904,7 @@ export default function NuevaSolicitudPage() {
                     rfcCheck.partner ? submitOpportunityOnly : submitFull
                   }
                   disabled={isLoading}
-                  className="btn-brand px-12 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-[0_20px_40px_var(--brand-accent-glow)] transition-all flex items-center justify-center gap-3"
+                  className="btn-brand px-7 sm:px-12 py-4 sm:py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-[0_20px_40px_var(--brand-accent-glow)] transition-all flex items-center justify-center gap-3"
                 >
                   {isLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -910,33 +929,33 @@ export default function NuevaSolicitudPage() {
         {currentStep === 5 && (
           <div className="max-w-2xl mx-auto space-y-10 relative animate-slide-in-up py-16 text-center">
             <div className="relative inline-block">
-              <div className="relative z-10 w-32 h-32 bg-[var(--brand-accent)] text-primary-content rounded-[40px] flex items-center justify-center mx-auto mb-10 shadow-[0_0_60px_var(--brand-accent-glow)] rotate-6">
-                <CheckCircle className="w-16 h-16" />
+              <div className="relative z-10 w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 bg-[var(--brand-accent)] text-primary-content rounded-[32px] md:rounded-[40px] flex items-center justify-center mx-auto mb-6 sm:mb-10 shadow-[0_0_60px_var(--brand-accent-glow)] rotate-6">
+                <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16" />
               </div>
               <div className="absolute inset-0 bg-[var(--brand-accent)]/20 blur-3xl rounded-full scale-150 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-5xl font-black mb-4 uppercase tracking-tighter leading-none">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 uppercase tracking-tighter leading-tight sm:leading-none">
                 ¡ENVIADO!
               </h2>
               <div className="h-1 w-20 bg-[var(--brand-accent)] mx-auto rounded-full mb-8 shadow-[0_0_15px_var(--brand-accent-glow)]" />
-              <p className="text-base-content font-medium text-lg max-w-md mx-auto">
+              <p className="text-base-content font-medium text-base sm:text-lg max-w-md mx-auto">
                 Tu solicitud ha sido recibida. Un ejecutivo senior se pondrá en
                 contacto contigo en breve.
               </p>
             </div>
-            <div className="bg-base-content/[0.02] border border-base-content/[0.05] rounded-3xl p-8 max-w-md mx-auto">
+            <div className="bg-base-content/[0.02] border border-base-content/[0.05] rounded-3xl p-6 sm:p-8 max-w-md mx-auto">
               <p className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.3em] mb-4">
                 Folio de Seguimiento
               </p>
-              <div className="text-2xl font-black text-base-content tracking-[0.1em] mb-2 font-mono">
+              <div className="text-lg sm:text-xl md:text-2xl font-black text-base-content tracking-[0.05em] sm:tracking-[0.1em] mb-2 font-mono break-all">
                 #{response?.opportunity_id || response?.id || "SIDE-092"}
               </div>
             </div>
             <div className="pt-8">
               <Link
                 href="/dashboard"
-                className="btn-brand px-12 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-[0_20px_40px_var(--brand-accent-glow)] transition-all inline-flex items-center gap-3"
+                className="btn-brand px-7 sm:px-12 py-4 sm:py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-[0_20px_40px_var(--brand-accent-glow)] transition-all inline-flex items-center gap-3"
               >
                 Finalizar y Volver <LayoutGrid className="w-4 h-4" />
               </Link>

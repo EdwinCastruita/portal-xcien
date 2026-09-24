@@ -18,6 +18,7 @@ import {
   Loader2,
   Mail,
   MapPin,
+  MoveHorizontal,
   Plus,
   Printer,
   Receipt,
@@ -446,8 +447,8 @@ export default function CotizacionPage() {
             <ChevronRight className="w-3 h-3 opacity-20" />
             <span>Editor</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter text-base-content flex items-center gap-3">
-            <Receipt className="w-8 h-8 text-primary" />
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-base-content flex items-center gap-3">
+            <Receipt className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-primary shrink-0" />
             {quotation
               ? "REVISAR DOCUMENTO"
               : editingId
@@ -491,9 +492,9 @@ export default function CotizacionPage() {
               </button>
               <button
                 onClick={() => window.print()}
-                className="btn btn-primary h-14 px-10 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20"
+                className="btn btn-primary flex-1 lg:flex-none h-14 px-6 sm:px-10 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20"
               >
-                <Printer className="w-4 h-4 mr-2" /> Imprimir PDF
+                <Printer className="w-4 h-4 mr-2 shrink-0" /> Imprimir PDF
               </button>
             </>
           ) : (
@@ -501,7 +502,7 @@ export default function CotizacionPage() {
               {editingId && (
                 <button
                   onClick={resetForm}
-                  className="btn btn-ghost h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest text-base-content/40"
+                  className="btn btn-ghost flex-1 lg:flex-none h-14 px-6 sm:px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest text-base-content/40"
                 >
                   Descartar
                 </button>
@@ -509,17 +510,24 @@ export default function CotizacionPage() {
               <button
                 onClick={createQuotation}
                 disabled={saving}
-                className="btn btn-primary h-14 px-12 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-primary/30 flex items-center gap-3 overflow-hidden group relative"
+                className="btn btn-primary flex-1 lg:flex-none h-14 px-6 sm:px-12 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-primary/30 flex items-center justify-center gap-2 sm:gap-3 overflow-hidden group relative"
               >
                 {saving ? (
                   <div className="flex items-center gap-2">
-                    <Loader2 className="animate-spin w-5 h-5" />
+                    <Loader2 className="animate-spin w-5 h-5 shrink-0" />
                     <span>PROCESANDO...</span>
                   </div>
                 ) : (
                   <>
-                    <Zap className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    <span>
+                    <Zap className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
+                    {/* Etiqueta corta en mobile — el texto completo
+                        ("PROCESAR Y GENERAR COTIZACIÓN", 30 caracteres) no
+                        entra en una sola línea sin envolver en ~311px, y
+                        `.btn` de daisyUI fuerza `white-space: nowrap`. */}
+                    <span className="sm:hidden">
+                      {editingId ? "GUARDAR CAMBIOS" : "GENERAR COTIZACIÓN"}
+                    </span>
+                    <span className="hidden sm:inline">
                       {editingId
                         ? "GUARDAR CAMBIOS"
                         : "PROCESAR Y GENERAR COTIZACIÓN"}
@@ -538,10 +546,8 @@ export default function CotizacionPage() {
             <div className="space-y-8">
               {/* Step 1: Config Basic */}
               <div className="bg-base-200 rounded-[2.5rem] p-8 lg:p-12 border border-base-content/5 shadow-sm space-y-10 group transition-all hover:shadow-md">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                    <Calendar className="w-5 h-5" />
-                  </div>
+                <div className="flex items-center gap-3.5">
+                  <Calendar className="w-6 h-6 text-primary" strokeWidth={1.75} />
                   <h3 className="text-lg font-black tracking-tight uppercase">
                     Datos Generales
                   </h3>
@@ -656,18 +662,16 @@ export default function CotizacionPage() {
 
               {/* Step 2: Line Items */}
               <div className="bg-base-200 rounded-[2.5rem] p-8 lg:p-12 border border-base-content/5 shadow-sm space-y-10">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                      <Layers className="w-5 h-5" />
-                    </div>
+                <div className="flex flex-wrap gap-3 justify-between items-center">
+                  <div className="flex items-center gap-3.5">
+                    <Layers className="w-6 h-6 text-primary" strokeWidth={1.75} />
                     <h3 className="text-lg font-black tracking-tight uppercase">
                       Servicios y Conceptos
                     </h3>
                   </div>
                   <button
                     onClick={addLine}
-                    className="btn btn-sm btn-ghost bg-primary/5 hover:bg-primary/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary"
+                    className="btn btn-sm btn-ghost bg-primary/5 hover:bg-primary/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary shrink-0"
                   >
                     + Nuevo Registro
                   </button>
@@ -677,9 +681,16 @@ export default function CotizacionPage() {
                   {lines.map((l) => (
                     <div
                       key={l.id}
-                      className="grid grid-cols-[1fr_80px_140px_48px] gap-4 items-center bg-base-100 p-6 rounded-3xl border border-base-content/5 group hover:border-primary/20 transition-all"
+                      // Mobile: 2 columnas (cantidad/precio comparten fila,
+                      // producto y el botón eliminar ocupan el ancho
+                      // completo). Desktop (`sm:` en adelante): las 4
+                      // columnas fijas originales — el grid `[1fr_80px_140px_48px]`
+                      // sin ninguna variante forzaba ~316px de columnas fijas
+                      // también en mobile, dejando la columna `1fr` en
+                      // negativo y desbordando toda la página horizontalmente.
+                      className="grid grid-cols-2 sm:grid-cols-[1fr_80px_140px_48px] gap-3 sm:gap-4 items-center bg-base-100 p-4 sm:p-6 rounded-3xl border border-base-content/5 group hover:border-primary/20 transition-all"
                     >
-                      <div className="space-y-2">
+                      <div className="col-span-2 sm:col-span-1 space-y-2">
                         <select
                           value={l.product_id || ""}
                           onChange={(e) =>
@@ -710,6 +721,9 @@ export default function CotizacionPage() {
                         />
                       </div>
                       <div className="form-control">
+                        <label className="sm:hidden text-[9px] font-black uppercase tracking-widest text-base-content/35 mb-1 ml-1">
+                          Cantidad
+                        </label>
                         <input
                           type="number"
                           value={l.quantity}
@@ -720,10 +734,13 @@ export default function CotizacionPage() {
                               parseFloat(e.target.value) || 0,
                             )
                           }
-                          className="input input-sm bg-base-200 text-center font-black h-12 rounded-xl border-none focus:ring-1 ring-primary"
+                          className="input input-sm bg-base-200 text-center font-black h-12 rounded-xl border-none focus:ring-1 ring-primary w-full"
                         />
                       </div>
                       <div className="form-control">
+                        <label className="sm:hidden text-[9px] font-black uppercase tracking-widest text-base-content/35 mb-1 ml-1">
+                          Precio unitario
+                        </label>
                         <input
                           type="number"
                           value={l.price}
@@ -734,13 +751,13 @@ export default function CotizacionPage() {
                               parseFloat(e.target.value) || 0,
                             )
                           }
-                          className="input input-sm bg-base-200 text-right font-black h-12 rounded-xl border-none focus:ring-1 ring-primary pr-4"
+                          className="input input-sm bg-base-200 text-right font-black h-12 rounded-xl border-none focus:ring-1 ring-primary pr-4 w-full"
                         />
                       </div>
-                      <div className="flex justify-end">
+                      <div className="flex justify-end col-span-2 sm:col-span-1">
                         <button
                           onClick={() => removeLine(l.id)}
-                          className="w-10 h-10 flex items-center justify-center rounded-xl text-error/20 hover:bg-error/10 hover:text-error transition-all"
+                          className="w-10 h-10 flex items-center justify-center rounded-xl text-error/20 hover:bg-error/10 hover:text-error transition-all shrink-0"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -755,7 +772,7 @@ export default function CotizacionPage() {
                     <p className="text-[10px] font-black uppercase text-base-content/30 tracking-widest">
                       Total Parcial (Sin Impuestos)
                     </p>
-                    <p className="text-3xl font-black text-base-content">
+                    <p className="text-xl sm:text-2xl md:text-3xl font-black text-base-content">
                       $
                       {subtotal.toLocaleString("es-MX", {
                         minimumFractionDigits: 2,
@@ -767,10 +784,8 @@ export default function CotizacionPage() {
 
               {/* Step 3: Notes */}
               <div className="bg-base-200 rounded-[2.5rem] p-8 lg:p-12 border border-base-content/5 shadow-sm space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                    <FileText className="w-5 h-5" />
-                  </div>
+                <div className="flex items-center gap-3.5">
+                  <FileText className="w-6 h-6 text-primary" strokeWidth={1.75} />
                   <h3 className="text-lg font-black tracking-tight uppercase">
                     Condiciones Comerciales
                   </h3>
@@ -779,18 +794,31 @@ export default function CotizacionPage() {
                   value={form.note}
                   onChange={(e) => setForm({ ...form, note: e.target.value })}
                   rows={4}
-                  className="textarea bg-base-100 w-full rounded-3xl p-8 font-medium border-base-content/5 focus:border-primary/20"
+                  className="textarea bg-base-100 w-full rounded-3xl p-4 sm:p-6 md:p-8 font-medium border-base-content/5 focus:border-primary/20"
                   placeholder="Ej: Oferta válida hasta fin de mes. Tiempos de entrega de 5-10 días hábiles..."
                 />
               </div>
             </div>
           ) : (
-            /* ── PREVIEW MODE ── */
-            <div
-              ref={printRef}
-              className="bg-white text-black p-[2.5cm] shadow-2xl min-h-[29.7cm] flex flex-col font-sans border-t-[14px] border-[#003a70] rounded-b-2xl"
-              style={{ fontFamily: "'Comfortaa', sans-serif" }}
-            >
+            /* ── PREVIEW MODE ──
+                Este bloque replica una hoja A4 tal cual se imprime/envía en
+                PDF (padding en cm, grid-cols-2 con gaps grandes, altura
+                mínima de página completa) — no tiene sentido "adaptarlo" a
+                mobile comprimiendo su diseño, porque dejaría de verse como
+                el documento real que el cliente va a recibir. En vez de
+                eso: se le da un ancho mínimo fijo y se envuelve en scroll
+                horizontal, con un aviso solo en mobile/tablet. */
+            <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0 lg:overflow-visible">
+              <p className="lg:hidden mb-4 flex items-center justify-center gap-2 text-center text-[10px] font-black uppercase tracking-widest text-base-content/40">
+                <MoveHorizontal className="w-3.5 h-3.5 shrink-0" />
+                Desliza para ver la cotización completa — se ve mejor en
+                escritorio
+              </p>
+              <div
+                ref={printRef}
+                className="bg-white text-black p-[2.5cm] shadow-2xl min-h-[29.7cm] min-w-[210mm] flex flex-col font-sans border-t-[14px] border-[#003a70] rounded-b-2xl"
+                style={{ fontFamily: "'Comfortaa', sans-serif" }}
+              >
               <div className="flex justify-between items-start mb-16 pb-12 border-b-2 border-slate-50">
                 <div className="space-y-2">
                   <h2
@@ -998,16 +1026,15 @@ export default function CotizacionPage() {
                 </p>
               </div>
             </div>
+            </div>
           )}
         </div>
 
         {/* ── Contrato digitalizado ── */}
         {currentOrderId && (
           <div className="bg-base-200 rounded-[2.5rem] p-8 lg:p-12 border border-base-content/5 shadow-sm space-y-8">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                <FileSignature className="w-5 h-5" />
-              </div>
+            <div className="flex items-center gap-3.5">
+              <FileSignature className="w-6 h-6 text-primary shrink-0" strokeWidth={1.75} />
               <div className="flex-1">
                 <h3 className="text-lg font-black tracking-tight uppercase">
                   Contrato digitalizado
@@ -1033,9 +1060,7 @@ export default function CotizacionPage() {
               // sobre los botones.
               <div className="flex flex-col gap-6">
                 <div className="flex items-center gap-4 bg-base-300/50 border border-base-content/5 rounded-2xl px-6 py-4 w-full">
-                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <FileText className="w-5 h-5 text-primary" />
-                  </div>
+                  <FileText className="w-6 h-6 text-primary shrink-0" strokeWidth={1.75} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-black uppercase tracking-tight truncate">
                       {contract.filename || "contrato.pdf"}
@@ -1146,10 +1171,8 @@ export default function CotizacionPage() {
 
         {!currentOrderId && (
           <div className="bg-base-200 rounded-[2.5rem] p-8 lg:p-12 border border-base-content/5 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-2xl bg-warning/10 flex items-center justify-center text-warning">
-                <FileSignature className="w-5 h-5" />
-              </div>
+            <div className="flex items-center gap-3.5">
+              <FileSignature className="w-6 h-6 text-warning shrink-0" strokeWidth={1.75} />
               <div className="flex-1">
                 <h3 className="text-lg font-black tracking-tight uppercase">
                   Contrato digitalizado
@@ -1163,7 +1186,7 @@ export default function CotizacionPage() {
         )}
 
         {/* ── SIDEBAR HISTORY ── */}
-        <div className="space-y-8 sticky top-8">
+        <div className="space-y-8 lg:sticky lg:top-8">
           <div className="flex justify-between items-center px-2">
             <h3
               className="text-sm font-black uppercase tracking-widest text-base-content/30 flex items-center gap-3"
@@ -1222,7 +1245,7 @@ export default function CotizacionPage() {
                     </div>
                     <button
                       onClick={() => deleteQuotation(q.id)}
-                      className="w-10 h-10 rounded-2xl bg-base-100 flex items-center justify-center text-base-content/10 hover:bg-error/10 hover:text-error transition-all"
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-base-content/20 hover:bg-error/10 hover:text-error transition-all"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

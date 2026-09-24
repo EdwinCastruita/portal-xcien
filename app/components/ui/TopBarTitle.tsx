@@ -28,9 +28,7 @@ export default function TopBarTitle() {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="w-9 h-9 rounded-xl bg-base-content/5 border border-base-content/10 flex items-center justify-center text-primary shrink-0">
-        <Icon className="w-4 h-4" />
-      </div>
+      <Icon className="w-5 h-5 text-primary shrink-0" strokeWidth={2} />
       <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
         <span className="text-base-content/35">Portal</span>
         <span className="text-base-content/20">/</span>
