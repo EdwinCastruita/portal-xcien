@@ -221,7 +221,7 @@ export default function NuevaSolicitudPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" });
     }
@@ -232,12 +232,12 @@ export default function NuevaSolicitudPage() {
 
   const handleSelectProduct = (opt: { id: number | string; name: string } | null) => {
     const product = products.find((p) => p.id === opt?.id);
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       product_id: opt ? Number(opt.id) : "",
       plan_speed: opt ? opt.name : "",
       plan_price: product ? product.price : 0,
-    });
+    }));
   };
 
   const verifyRFC = async () => {
@@ -537,7 +537,7 @@ export default function NuevaSolicitudPage() {
                   const c = parseLatLng(e.target.value);
                   if (c) {
                     manualPinRef.current = true;
-                    setFormData({ ...formData, lead_lat: c[0], lead_lng: c[1] });
+                    setFormData((prev) => ({ ...prev, lead_lat: c[0], lead_lng: c[1] }));
                   }
                 }}
                 className="w-full bg-base-200 border border-base-content/[0.05] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all text-base-content font-medium placeholder:text-base-content/45"
@@ -547,7 +547,7 @@ export default function NuevaSolicitudPage() {
                 lng={formData.lead_lng}
                 onChange={(la, ln) => {
                   manualPinRef.current = true;
-                  setFormData({ ...formData, lead_lat: la, lead_lng: ln });
+                  setFormData((prev) => ({ ...prev, lead_lat: la, lead_lng: ln }));
                 }}
               />
               <p className="text-[9px] font-bold uppercase tracking-widest text-base-content/40 flex items-center gap-1.5 ml-1">
@@ -575,11 +575,11 @@ export default function NuevaSolicitudPage() {
                   value={formData.lead_lat ?? ""}
                   onChange={(e) => {
                     manualPinRef.current = true;
-                    setFormData({
-                      ...formData,
+                    setFormData((prev) => ({
+                      ...prev,
                       lead_lat:
                         e.target.value === "" ? null : parseFloat(e.target.value),
-                    });
+                    }));
                   }}
                   className="w-full bg-base-200 border border-base-content/[0.05] rounded-2xl px-5 py-4 text-sm font-mono focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all text-base-content"
                 />
@@ -590,11 +590,11 @@ export default function NuevaSolicitudPage() {
                   value={formData.lead_lng ?? ""}
                   onChange={(e) => {
                     manualPinRef.current = true;
-                    setFormData({
-                      ...formData,
+                    setFormData((prev) => ({
+                      ...prev,
                       lead_lng:
                         e.target.value === "" ? null : parseFloat(e.target.value),
-                    });
+                    }));
                   }}
                   className="w-full bg-base-200 border border-base-content/[0.05] rounded-2xl px-5 py-4 text-sm font-mono focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all text-base-content"
                 />
