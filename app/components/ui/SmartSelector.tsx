@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Check, ChevronDown, LucideIcon, X } from 'lucide-react';
 
 interface Option {
@@ -32,6 +33,9 @@ export default function SmartSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState<{ left: number; top: number; width: number; maxHeight: number } | null>(null);
 
   const selectedOption = options.find(o => String(o.id) === String(selectedId));
 
@@ -42,7 +46,10 @@ export default function SmartSelector({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        !containerRef.current?.contains(event.target as Node) &&
+        !menuRef.current?.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -50,11 +57,37 @@ export default function SmartSelector({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useLayoutEffect(() => {
+    if (!isOpen || !triggerRef.current) return;
+    const updatePosition = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const below = window.innerHeight - rect.bottom - 16;
+      const above = rect.top - 16;
+      const openAbove = below < 220 && above > below;
+      const maxHeight = Math.max(120, Math.min(380, openAbove ? above : below));
+      setMenuPosition({
+        left: rect.left,
+        top: openAbove ? Math.max(8, rect.top - maxHeight - 8) : rect.bottom + 8,
+        width: rect.width,
+        maxHeight,
+      });
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen]);
+
   return (
     <div className="relative w-full" ref={containerRef}>
       {label && <p className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em] mb-3 ml-1">{label}</p>}
 
       <div
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full bg-base-content/[0.03] border ${isOpen ? 'border-(--brand-accent)/50 shadow-[0_0_30px_var(--brand-accent-glow)] ring-1 ring-(--brand-accent)/20' : 'border-base-content/10'} rounded-2xl px-6 py-5 cursor-pointer transition-all flex items-center justify-between group hover:bg-base-content/[0.05]`}
       >
@@ -67,8 +100,8 @@ export default function SmartSelector({
         <ChevronDown className={`w-5 h-5 text-base-content/40 group-hover:text-base-content transition-all ${isOpen ? 'rotate-180 text-(--brand-accent)' : ''}`} />
       </div>
 
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-3 z-[100] card-premium elevate-3 rounded-[28px] overflow-hidden animate-in fade-in zoom-in-95 duration-200 backdrop-blur-3xl">
+      {isOpen && menuPosition && typeof document !== 'undefined' && createPortal(
+        <div ref={menuRef} style={{ position: 'fixed', left: menuPosition.left, top: menuPosition.top, width: menuPosition.width, maxHeight: menuPosition.maxHeight }} className="z-[9999] card-premium elevate-3 rounded-[28px] overflow-hidden animate-in fade-in zoom-in-95 duration-200 backdrop-blur-3xl">
           <div className="p-5 border-b border-base-content/5 bg-base-content/[0.02] flex items-center gap-4">
             <Search className="w-5 h-5 text-base-content/40" />
             <input
@@ -86,7 +119,7 @@ export default function SmartSelector({
             )}
           </div>
 
-          <div className="max-h-[380px] overflow-y-auto custom-scrollbar p-2">
+          <div style={{ maxHeight: menuPosition.maxHeight - 80 }} className="overflow-y-auto custom-scrollbar p-2">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => (
                 <div
@@ -127,7 +160,7 @@ export default function SmartSelector({
               </div>
             )}
           </div>
-        </div>
+        </div>, document.body,
       )}
     </div>
   );

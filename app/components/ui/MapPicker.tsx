@@ -59,7 +59,7 @@ export default function MapPicker({ lat, lng, onChange, className }: Props) {
   const markerRef = useRef<any>(null);
   const [failed, setFailed] = useState(false);
 
-  const hasPoint = typeof lat === "number" && typeof lng === "number" && (lat !== 0 || lng !== 0);
+  const hasPoint = typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && (lat !== 0 || lng !== 0);
   const center: [number, number] = hasPoint
     ? [lat as number, lng as number]
     : [25.6866, -100.3161]; // Monterrey por defecto

@@ -43,6 +43,12 @@ export class ApiError extends Error {
   }
 }
 
+function expirePortalSession() {
+  if (typeof document === "undefined") return;
+  document.cookie = `${SESSION_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  if (window.location.pathname !== "/") window.location.assign("/?expired=1");
+}
+
 type ApiOptions = {
   method?: "GET" | "POST";
   body?: unknown;
@@ -68,24 +74,45 @@ export async function apiFetch<T = any>(
     if (cid) url.searchParams.set("_cid", cid);
   }
 
-  const res = await fetch(url.toString(), {
-    method,
-    // text/plain => "simple request", el navegador no hace preflight.
-    headers: { "Content-Type": "text/plain;charset=UTF-8" },
-    signal,
-    body:
-      body !== undefined
-        ? JSON.stringify(body)
-        : method === "POST"
-          ? "{}"
-          : undefined,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60_000);
+  const forwardAbort = () => controller.abort();
+  signal?.addEventListener("abort", forwardAbort, { once: true });
+  let res: Response;
+  try {
+    res = await fetch(url.toString(), {
+      method,
+      // text/plain => "simple request", el navegador no hace preflight.
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      signal: controller.signal,
+      body:
+        body !== undefined
+          ? JSON.stringify(body)
+          : method === "POST"
+            ? "{}"
+            : undefined,
+    });
+  } catch (error: any) {
+    if (error?.name === "AbortError") throw new ApiError("La solicitud tardó demasiado o fue cancelada.");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener("abort", forwardAbort);
+  }
+
+  if (res.status === 401 || res.status === 303) {
+    expirePortalSession();
+    throw new ApiError("Tu sesión expiró. Inicia sesión de nuevo.");
+  }
 
   let data: any = null;
   try {
     data = await res.json();
   } catch {
-    /* respuesta vacía */
+    if (res.ok) {
+      expirePortalSession();
+      throw new ApiError("La sesión expiró o el servidor devolvió una respuesta inválida.");
+    }
   }
 
   if (!res.ok && !data) {

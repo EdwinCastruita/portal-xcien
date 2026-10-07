@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Shield,
-  Zap,
   Phone,
   Mail,
   User,
@@ -21,12 +20,9 @@ import {
   LayoutGrid,
   Search,
   Tag,
-  Compass,
 } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "../../../lib/api";
-import { parseLatLng, geocodeCityState } from "../../../lib/geo";
-import MapPicker from "../../../components/ui/MapPicker";
 import SmartSelector from "../../../components/ui/SmartSelector";
 
 const steps = [
@@ -82,6 +78,7 @@ function FormInput({
   value,
   onChange,
   error,
+  required = true,
 }: {
   label: string;
   name: string;
@@ -91,11 +88,12 @@ function FormInput({
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
+  required?: boolean;
 }) {
   return (
     <div className="space-y-2 group">
       <label className="text-[10px] font-black text-base-content/50 ml-1 uppercase tracking-[0.2em] group-focus-within:text-[var(--brand-accent)] transition-colors">
-        {label} <span className="text-[var(--brand-accent)]">*</span>
+        {label} {required && <span className="text-[var(--brand-accent)]">*</span>}
       </label>
       <div className="relative">
         <input
@@ -136,18 +134,15 @@ export default function NuevaSolicitudPage() {
     contact_phone: "",
     city: "",
     state: "",
-    lead_lat: null as number | null,
-    lead_lng: null as number | null,
+    expected_closing: "",
     product_id: "" as number | "",
     plan_speed: "",
     plan_price: 0,
   });
   const [response, setResponse] = useState<any>(null);
-  const [rfcCheck, setRfcCheck] = useState<{
-    checking: boolean;
-    checked: boolean;
-    partner: any | null;
-  }>({ checking: false, checked: false, partner: null });
+  const [customerResults, setCustomerResults] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [customerSearching, setCustomerSearching] = useState(false);
 
   const [products, setProducts] = useState<
     { id: number; name: string; price: number }[]
@@ -180,39 +175,29 @@ export default function NuevaSolicitudPage() {
     fetchProducts();
   }, []);
 
-  // Geolocalización del Step 1: al completar Estado + Ciudad, centramos el
-  // mapa ahí automáticamente (geocoding vía Nominatim/OSM). En cuanto el
-  // usuario interactúa manualmente con el mapa (clic, arrastre, pegar link,
-  // o escribir LAT/LNG) dejamos de sobreescribir su selección exacta.
-  const [geocoding, setGeocoding] = useState(false);
-  const manualPinRef = useRef(false);
-
   useEffect(() => {
-    if (manualPinRef.current) return;
-    const city = formData.city.trim();
-    const state = formData.state.trim();
-    if (!city || !state) return;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(async () => {
-      setGeocoding(true);
-      const coords = await geocodeCityState(city, state, controller.signal);
-      if (coords && !manualPinRef.current) {
-        setFormData((prev) => ({
-          ...prev,
-          lead_lat: coords[0],
-          lead_lng: coords[1],
-        }));
+    const query = (formData.business_name || formData.rfc).trim();
+    if (query.length < 2) {
+      setCustomerResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setCustomerSearching(true);
+      try {
+        const result = await apiFetch("/customers", {
+          method: "POST",
+          company: true,
+          body: { search: query, limit: 10 },
+        });
+        setCustomerResults(Array.isArray(result?.customers) ? result.customers : []);
+      } catch {
+        setCustomerResults([]);
+      } finally {
+        setCustomerSearching(false);
       }
-      setGeocoding(false);
-    }, 700);
-
-    return () => {
-      controller.abort();
-      clearTimeout(timeoutId);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.city, formData.state]);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [formData.business_name, formData.rfc]);
 
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
@@ -225,8 +210,8 @@ export default function NuevaSolicitudPage() {
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" });
     }
-    if (name === "rfc") {
-      setRfcCheck({ ...rfcCheck, checked: false, partner: null });
+    if (name === "rfc" || name === "business_name") {
+      setSelectedCustomer(null);
     }
   };
 
@@ -238,31 +223,6 @@ export default function NuevaSolicitudPage() {
       plan_speed: opt ? opt.name : "",
       plan_price: product ? product.price : 0,
     }));
-  };
-
-  const verifyRFC = async () => {
-    const rfc = formData.rfc.trim().toUpperCase();
-    if (!rfc) return;
-
-    setIsLoading(true);
-    setRfcCheck({ checking: true, checked: false, partner: null });
-    try {
-      const data = await apiFetch(
-        `/solicitudes/check_rfc?rfc=${encodeURIComponent(rfc)}`,
-      );
-      setRfcCheck({
-        checking: false,
-        checked: true,
-        partner: data.partner,
-      });
-      if (data.partner) {
-        setFormData((prev) => ({ ...prev, business_name: data.partner.name }));
-      }
-    } catch {
-      setRfcCheck({ checking: false, checked: true, partner: null });
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const goNext = async () => {
@@ -278,14 +238,12 @@ export default function NuevaSolicitudPage() {
     if (currentStep === 2 && !formData.product_id) return;
     if (currentStep === 3) {
       if (
-        !formData.rfc.trim() ||
         !formData.business_name.trim() ||
         !formData.contact_name.trim() ||
         !formData.contact_email.trim() ||
         !formData.contact_phone.trim()
       ) {
         setErrors({
-          rfc: !formData.rfc.trim() ? "RFC es obligatorio" : "",
           business_name: !formData.business_name.trim()
             ? "Razón social es obligatoria"
             : "",
@@ -331,15 +289,15 @@ export default function NuevaSolicitudPage() {
   };
 
   const submitOpportunityOnly = async () => {
-    if (!rfcCheck.partner) return;
+    if (!selectedCustomer) return;
     setIsLoading(true);
     try {
       const data = await apiFetch("/solicitudes/opportunity", {
         method: "POST",
         company: true,
         body: {
-          partner_id: rfcCheck.partner.id,
-          business_name: rfcCheck.partner.name,
+          partner_id: selectedCustomer.id,
+          business_name: selectedCustomer.name,
           product_id: formData.product_id || undefined,
           plan_speed: formData.plan_speed,
           plan_price: formData.plan_price,
@@ -349,8 +307,7 @@ export default function NuevaSolicitudPage() {
           city: formData.city,
           state: formData.state,
           rfc: formData.rfc,
-          lead_lat: formData.lead_lat ?? undefined,
-          lead_lng: formData.lead_lng ?? undefined,
+          expected_closing: formData.expected_closing || undefined,
         },
       });
       // Siguiente paso: capturar requisitos de pre-venta (sitio/contacto/cierre)
@@ -522,85 +479,6 @@ export default function NuevaSolicitudPage() {
               />
             </div>
 
-            {/* Geolocalización (opcional) — mismo componente que usa el
-                modal de edición de solicitudes existentes. El mapa se centra
-                solo en Estado/Ciudad; el usuario afina el punto exacto con
-                un clic o arrastrando el pin. */}
-            <div className="space-y-4">
-              <p className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
-                <Compass className="w-3 h-3" /> UBICACIÓN EXACTA (OPCIONAL)
-              </p>
-              <input
-                type="text"
-                placeholder="Pega aquí el link de Google Maps…"
-                onChange={(e) => {
-                  const c = parseLatLng(e.target.value);
-                  if (c) {
-                    manualPinRef.current = true;
-                    setFormData((prev) => ({ ...prev, lead_lat: c[0], lead_lng: c[1] }));
-                  }
-                }}
-                className="w-full bg-base-200 border border-base-content/[0.05] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all text-base-content font-medium placeholder:text-base-content/45"
-              />
-              <MapPicker
-                lat={formData.lead_lat}
-                lng={formData.lead_lng}
-                onChange={(la, ln) => {
-                  manualPinRef.current = true;
-                  setFormData((prev) => ({ ...prev, lead_lat: la, lead_lng: ln }));
-                }}
-              />
-              <p className="text-[9px] font-bold uppercase tracking-widest text-base-content/40 flex items-center gap-1.5 ml-1">
-                {geocoding ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" /> Buscando
-                    coordenadas de {formData.city}, {formData.state}…
-                  </>
-                ) : manualPinRef.current ? (
-                  <>
-                    <Check className="w-3 h-3 text-[var(--brand-accent)]" />{" "}
-                    Ubicación exacta confirmada
-                  </>
-                ) : formData.lead_lat != null ? (
-                  "Ubicación aproximada — haz clic en el mapa para precisarla"
-                ) : (
-                  "Selecciona Estado y Ciudad para centrar el mapa"
-                )}
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="LAT"
-                  value={formData.lead_lat ?? ""}
-                  onChange={(e) => {
-                    manualPinRef.current = true;
-                    setFormData((prev) => ({
-                      ...prev,
-                      lead_lat:
-                        e.target.value === "" ? null : parseFloat(e.target.value),
-                    }));
-                  }}
-                  className="w-full bg-base-200 border border-base-content/[0.05] rounded-2xl px-5 py-4 text-sm font-mono focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all text-base-content"
-                />
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="LNG"
-                  value={formData.lead_lng ?? ""}
-                  onChange={(e) => {
-                    manualPinRef.current = true;
-                    setFormData((prev) => ({
-                      ...prev,
-                      lead_lng:
-                        e.target.value === "" ? null : parseFloat(e.target.value),
-                    }));
-                  }}
-                  className="w-full bg-base-200 border border-base-content/[0.05] rounded-2xl px-5 py-4 text-sm font-mono focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all text-base-content"
-                />
-              </div>
-            </div>
-
             <button
               onClick={goNext}
               className="w-full btn-brand py-5 rounded-2xl transition-all duration-300 mt-10 flex items-center justify-center gap-3 font-black uppercase tracking-[0.2em] text-xs shadow-xl group"
@@ -710,60 +588,52 @@ export default function NuevaSolicitudPage() {
                   </h3>
                 </div>
                 <div className="space-y-4">
-                  <div className="space-y-2 group">
-                    <label className="text-[10px] font-black text-base-content/50 ml-1 uppercase tracking-[0.2em] group-focus-within:text-[var(--brand-accent)]">
-                      RFC *
-                    </label>
-                    <div className="relative flex gap-3">
-                      <div className="relative flex-1">
-                        <input
-                          type="text"
-                          name="rfc"
-                          value={formData.rfc}
-                          onChange={handleChange}
-                          placeholder="XAXX010101000"
-                          className={`w-full bg-base-200 border rounded-2xl px-5 py-4 text-sm focus:border-[var(--brand-accent)]/50 transition-all text-base-content font-medium
-                          ${errors.rfc ? "border-error/40" : "border-base-content/[0.05]"}`}
-                        />
-                        <Search className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/45" />
-                      </div>
-                      <button
-                        onClick={verifyRFC}
-                        disabled={isLoading || !formData.rfc}
-                        className="btn-brand px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-20 transition-all"
-                      >
-                        {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "Validar"
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  {rfcCheck.checked && !rfcCheck.partner && (
+                  <FormInput
+                    label="RFC (OPCIONAL)"
+                    name="rfc"
+                    placeholder="Captúralo si lo tienes disponible"
+                    icon={Search}
+                    value={formData.rfc}
+                    onChange={handleChange}
+                    required={false}
+                  />
+                  <div className="relative">
                     <FormInput
                       label="RAZÓN SOCIAL"
                       name="business_name"
-                      placeholder="Empresa S.A. de C.V."
+                      placeholder="Busca un contacto o captura una razón social nueva"
                       icon={Building2}
                       value={formData.business_name}
                       onChange={handleChange}
                       error={errors.business_name}
                     />
-                  )}
-                  {rfcCheck.partner && (
-                    <div className="bg-base-200 border border-[var(--brand-accent)]/20 p-6 rounded-2xl animate-in slide-in-from-top-4 backdrop-blur-md">
-                      <div className="flex items-center gap-3 mb-2">
-                        <CheckCircle className="w-5 h-5 text-[var(--brand-accent)]" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--brand-accent)]">
-                          Cliente Registrado
-                        </span>
+                    {(customerSearching || customerResults.length > 0) && !selectedCustomer && (
+                      <div className="absolute top-full left-0 right-0 z-[120] mt-2 max-h-64 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-300 shadow-2xl">
+                        {customerSearching && <p className="px-5 py-3 text-xs text-base-content/50">Buscando contactos…</p>}
+                        {customerResults.map((customer) => (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setFormData((prev) => ({ ...prev, business_name: customer.name, rfc: customer.vat || prev.rfc }));
+                              setCustomerResults([]);
+                            }}
+                            className="block w-full px-5 py-3 text-left hover:bg-primary/10"
+                          >
+                            <span className="block text-sm font-bold">{customer.display_name || customer.name}</span>
+                            <span className="block text-xs text-base-content/50">{[customer.email, customer.vat].filter(Boolean).join(" · ")}</span>
+                          </button>
+                        ))}
                       </div>
-                      <p className="text-base-content font-black text-lg uppercase tracking-tight">
-                        {rfcCheck.partner.name}
-                      </p>
-                    </div>
-                  )}
+                    )}
+                    {selectedCustomer && (
+                      <p className="mt-2 text-xs font-bold text-success">Cliente existente seleccionado: {selectedCustomer.name}</p>
+                    )}
+                    {!selectedCustomer && formData.business_name.trim() && customerResults.length === 0 && !customerSearching && (
+                      <p className="mt-2 text-xs text-base-content/45">Se creará un nuevo cliente con esta razón social.</p>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="space-y-6">
@@ -802,6 +672,18 @@ export default function NuevaSolicitudPage() {
                   error={errors.contact_phone}
                 />
               </div>
+            </div>
+            <div className="max-w-md">
+              <FormInput
+                label="FECHA DE CIERRE PREVISTO (OPCIONAL)"
+                name="expected_closing"
+                type="date"
+                placeholder=""
+                icon={undefined}
+                value={formData.expected_closing}
+                onChange={handleChange}
+                required={false}
+              />
             </div>
             <div className="flex flex-wrap justify-between items-center gap-4 pt-10 border-t border-base-content/[0.03]">
               <button
@@ -852,7 +734,7 @@ export default function NuevaSolicitudPage() {
                 {
                   label: "Empresa",
                   title: formData.business_name,
-                  value: `RFC: ${formData.rfc}`,
+                  value: formData.rfc ? `RFC: ${formData.rfc}` : "RFC pendiente",
                   icon: Building2,
                 },
                 {
@@ -901,7 +783,7 @@ export default function NuevaSolicitudPage() {
               <div className="flex flex-col gap-3 w-full md:w-auto">
                 <button
                   onClick={
-                    rfcCheck.partner ? submitOpportunityOnly : submitFull
+                    selectedCustomer ? submitOpportunityOnly : submitFull
                   }
                   disabled={isLoading}
                   className="btn-brand px-7 sm:px-12 py-4 sm:py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:shadow-[0_20px_40px_var(--brand-accent-glow)] transition-all flex items-center justify-center gap-3"

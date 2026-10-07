@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { API_BASE, SESSION_COOKIE } from "./lib/api";
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import AnimatedLinesBackground from "./components/ui/AnimatedLinesBackground";
@@ -17,6 +17,12 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("expired")) {
+      setError("Tu sesión expiró. Inicia sesión para continuar.");
+    }
+  }, []);
 
   const handleShowPassword = () => {
     setShowPassword(true);

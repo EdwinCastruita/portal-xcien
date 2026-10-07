@@ -23,6 +23,11 @@ const PAGE_SIZE = 10;
 
 const DOTS = "…";
 
+function isClosed(status: string) {
+  const value = (status || "").toLowerCase();
+  return ["won", "ganada", "concretado", "cerrada", "lost", "perdida", "cancel"].some((term) => value.includes(term));
+}
+
 function range(start: number, end: number): number[] {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
@@ -66,13 +71,7 @@ function getPaginationRange(
 function getStageBadge(status: string) {
   const s = (status || "").toLowerCase();
 
-  if (
-    s.includes("ganada") ||
-    s.includes("won") ||
-    s.includes("cerrada") ||
-    s.includes("concreat") ||
-    s.includes("activ")
-  )
+  if (s.includes("concretado") || s.includes("ganada") || s.includes("won") || s.includes("cerrada") || s.includes("activ"))
     return {
       bg: "bg-success/10",
       border: "border-success/20",
@@ -86,12 +85,14 @@ function getStageBadge(status: string) {
       color: "text-error",
       label: "Perdida/Canc.",
     };
-  if (
-    s.includes("pre-venta") ||
-    s.includes("preventa") ||
-    s.includes("habilit") ||
-    s.includes("contrat")
-  )
+  if (s.includes("contratacion") || s.includes("contratación"))
+    return {
+      bg: "bg-info/10",
+      border: "border-info/20",
+      color: "text-info",
+      label: "Contratación",
+    };
+  if (s.includes("pre-venta") || s.includes("preventa") || s.includes("habilit"))
     return {
       bg: "bg-info/10",
       border: "border-info/20",
@@ -159,18 +160,8 @@ export default function SolicitudesPage() {
       String(s.lead_id ?? "").includes(debouncedSearch.trim());
 
     if (filter === "all") return matchesSearch;
-    if (filter === "active")
-      return (
-        matchesSearch &&
-        !s.status?.toLowerCase().includes("won") &&
-        !s.status?.toLowerCase().includes("lost")
-      );
-    if (filter === "won")
-      return (
-        matchesSearch &&
-        (s.status?.toLowerCase().includes("won") ||
-          s.status?.toLowerCase().includes("ganada"))
-      );
+    if (filter === "active") return matchesSearch && !isClosed(s.status);
+    if (filter === "won") return matchesSearch && isClosed(s.status);
     return matchesSearch;
   });
 

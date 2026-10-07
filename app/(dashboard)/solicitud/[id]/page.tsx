@@ -39,7 +39,6 @@ import {
   Award,
   Info,
   Copy,
-  Compass,
 } from "lucide-react";
 import SmartSelector from "@/app/components/ui/SmartSelector";
 import StageStepper from "@/app/components/ui/StageStepper";
@@ -68,11 +67,20 @@ function flattenSolicitud(s: any) {
     site_state: site.state || "",
     site_phone: site.phone || "",
     site_email: site.email || "",
-    site_lat: site.lat || 0,
-    site_lng: site.lng || 0,
-    site_contact_id: s.site_contact_id || site.id || null,
+    site_lat: site.lat && site.lng ? site.lat : null,
+    site_lng: site.lat && site.lng ? site.lng : null,
+    site_city_id: site.city_id || null,
+    site_state_id: site.state_id || null,
+    site_region: site.region || "",
+    site_contact_id: s.site_contact_id || null,
     site_contact: s.contact_name || "",
   };
+}
+
+function parseCoordinate(value: string, limit: number): number | null {
+  if (!/^-?\d+(?:\.\d+)?$/.test(value.trim())) return null;
+  const number = Number(value);
+  return Number.isFinite(number) && Math.abs(number) <= limit ? number : null;
 }
 
 function DetailItem({
@@ -149,7 +157,11 @@ export default function SolicitudDetallePage() {
   // All opportunities state
   const [opportunities, setOpportunities] = useState<any[]>([]);
   const [loadingOpps, setLoadingOpps] = useState(false);
+  const [quotations, setQuotations] = useState<any[]>([]);
   const [relatedPartners, setRelatedPartners] = useState<any[]>([]);
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  const [creatingSite, setCreatingSite] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
@@ -209,10 +221,19 @@ export default function SolicitudDetallePage() {
         setLoadingProducts(false);
       }
     }
+    async function fetchQuotations() {
+      try {
+        const res = await apiFetch(`/solicitudes/${id}/quotations`, { company: true });
+        setQuotations(Array.isArray(res?.quotations) ? res.quotations : []);
+      } catch (err) {
+        console.error("Error fetching quotation history", err);
+      }
+    }
 
     fetchSolicitud();
     fetchOpportunities();
     fetchProducts();
+    fetchQuotations();
   }, [id]);
 
   // Contactos/direcciones relacionados (una vez conocido el partner de la oportunidad)
@@ -227,6 +248,26 @@ export default function SolicitudDetallePage() {
   }, [solicitud?.partner_id]);
 
   useEffect(() => {
+    apiFetch("/states", { company: true })
+      .then((res) => setStates(Array.isArray(res?.states) ? res.states : []))
+      .catch((err) => console.error("Error fetching states", err));
+  }, []);
+
+  useEffect(() => {
+    if (!editData.site_state_id) {
+      setCities([]);
+      return;
+    }
+    apiFetch("/cities", {
+      method: "POST",
+      company: true,
+      body: { state_id: editData.site_state_id },
+    })
+      .then((res) => setCities(Array.isArray(res?.cities) ? res.cities : []))
+      .catch((err) => console.error("Error fetching cities", err));
+  }, [editData.site_state_id]);
+
+  useEffect(() => {
     const shouldSetup = searchParams?.get("setup") === "1";
     if (!shouldSetup || autoOpenedSetup || !solicitud) return;
 
@@ -237,8 +278,6 @@ export default function SolicitudDetallePage() {
       site_phone: solicitud.site_phone || "",
       site_email: solicitud.site_email || "",
       expected_closing: solicitud.expected_closing || "",
-      lead_lat: solicitud.lead_lat || null,
-      lead_lng: solicitud.lead_lng || null,
     }));
     setShowSiteEditor(true);
     setAutoOpenedSetup(true);
@@ -261,8 +300,10 @@ export default function SolicitudDetallePage() {
       site_zip: solicitud.site_zip || "",
       site_city: solicitud.site_city || "",
       site_state: solicitud.site_state || "",
-      site_lat: solicitud.site_lat || 0,
-      site_lng: solicitud.site_lng || 0,
+      site_lat: solicitud.site_lat ?? null,
+      site_lng: solicitud.site_lng ?? null,
+      site_city_id: solicitud.site_city_id || null,
+      site_state_id: solicitud.site_state_id || null,
       expected_closing: solicitud.expected_closing || "",
       product_id: solicitud.product_id || "",
     });
@@ -303,8 +344,6 @@ export default function SolicitudDetallePage() {
       plan_price: solicitud.plan_price,
       product_id: solicitud.product_id || "",
       expected_closing: solicitud.expected_closing || "",
-      lead_lat: solicitud.lead_lat || 0,
-      lead_lng: solicitud.lead_lng || 0,
     });
     setShowOpportunityEditor(true);
   };
@@ -314,11 +353,13 @@ export default function SolicitudDetallePage() {
       contact_name: solicitud.contact_name || "",
       contact_email: solicitud.contact_email || "",
       contact_phone: solicitud.contact_phone || "",
+      contact_edit: true,
     });
     setShowContactEditor(true);
   };
 
   const openSiteDrawer = () => {
+    setCreatingSite(false);
     setEditData({
       ...solicitud,
       site_id: solicitud.site_id || null,
@@ -327,6 +368,9 @@ export default function SolicitudDetallePage() {
       site_email: solicitud.site_email || "",
       site_city: solicitud.site_city || "",
       site_state: solicitud.site_state || "",
+      site_city_id: solicitud.site_city_id || null,
+      site_state_id: solicitud.site_state_id || null,
+      create_site: false,
       expected_closing: solicitud.expected_closing || "",
     });
     setSiteErrors({});
@@ -827,78 +871,6 @@ export default function SolicitudDetallePage() {
                 </div>
               </div>
 
-              {/* Coordinates Section */}
-              <div className="space-y-4">
-                <p className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em] flex items-center gap-2">
-                  <Compass className="w-3 h-3" /> GEOLOCALIZACIÓN REQUERIDA
-                </p>
-                <input
-                  type="text"
-                  placeholder="Pega aquí el link de Google Maps…"
-                  onChange={(e) => {
-                    const c = parseLatLng(e.target.value);
-                    if (c)
-                      setEditData({
-                        ...editData,
-                        lead_lat: c[0],
-                        lead_lng: c[1],
-                      });
-                  }}
-                  className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-4 text-base-content text-xs focus:border-(--brand-accent)/50 transition-all outline-none"
-                />
-                <MapPicker
-                  lat={editData.lead_lat}
-                  lng={editData.lead_lng}
-                  onChange={(la, ln) =>
-                    setEditData({ ...editData, lead_lat: la, lead_lng: ln })
-                  }
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="relative group">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-base-content/45 group-focus-within:text-(--brand-accent)/40 transition-colors uppercase">
-                      LAT
-                    </div>
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="0.0000"
-                      value={editData.lead_lat ?? ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          lead_lat:
-                            e.target.value === ""
-                              ? null
-                              : parseFloat(e.target.value),
-                        })
-                      }
-                      className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl pl-16 pr-6 py-5 text-base-content text-sm font-mono focus:border-(--brand-accent)/50 transition-all outline-none"
-                    />
-                  </div>
-                  <div className="relative group">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-base-content/45 group-focus-within:text-(--brand-accent)/40 transition-colors uppercase">
-                      LNG
-                    </div>
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="0.0000"
-                      value={editData.lead_lng ?? ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          lead_lng:
-                            e.target.value === ""
-                              ? null
-                              : parseFloat(e.target.value),
-                        })
-                      }
-                      className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl pl-16 pr-6 py-5 text-base-content text-sm font-mono focus:border-(--brand-accent)/50 transition-all outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
               <button
                 onClick={async () => {
                   const ok = await saveEdit();
@@ -1034,24 +1006,57 @@ export default function SolicitudDetallePage() {
 
             <div className="space-y-12">
               <div className="grid md:grid-cols-2 gap-10">
-                <SmartSelector
-                  label="SITIO (CLIENTE FINAL)"
-                  placeholder="Buscar sitio..."
-                  icon={Building2}
-                  options={relatedPartners.map((p) => ({
-                    id: p.id,
-                    name: p.name,
-                    subtitle: p.type !== "contact" ? p.type?.toUpperCase() : "",
-                  }))}
-                  selectedId={editData.site_id}
-                  onSelect={(opt) => {
-                    setEditData({
-                      ...editData,
-                      site_id: opt ? Number(opt.id) : null,
-                      site_name: opt ? opt.name : "",
-                    });
-                  }}
-                />
+                <div className="space-y-3">
+                  {!creatingSite ? (
+                    <SmartSelector
+                      label="SITIO (CLIENTE FINAL)"
+                      placeholder="Buscar sitio..."
+                      icon={Building2}
+                      options={relatedPartners
+                        .filter((p) => p.type === "delivery" || p.id === editData.site_id)
+                        .map((p) => ({ id: p.id, name: p.name, subtitle: p.city }))}
+                      selectedId={editData.site_id}
+                      onSelect={(opt) => {
+                        const partner = relatedPartners.find((p) => p.id === opt?.id);
+                        setEditData({
+                          ...editData,
+                          site_id: opt ? Number(opt.id) : null,
+                          site_name: partner?.name || "",
+                          site_street: partner?.street_name || "",
+                          site_number: partner?.street_number || "",
+                          site_colony: partner?.l10n_mx_edi_colony || "",
+                          site_zip: partner?.zip || "",
+                          site_city: partner?.city || "",
+                          site_state: partner?.state || "",
+                          site_city_id: partner?.city_id || null,
+                          site_state_id: partner?.state_id || null,
+                          site_lat: partner?.partner_latitude && partner?.partner_longitude ? partner.partner_latitude : null,
+                          site_lng: partner?.partner_latitude && partner?.partner_longitude ? partner.partner_longitude : null,
+                          site_phone: partner?.phone || "",
+                          site_email: partner?.email || "",
+                          create_site: false,
+                        });
+                      }}
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      <label className="block text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Nombre del nuevo sitio</label>
+                      <input
+                        value={editData.site_name || ""}
+                        onChange={(e) => setEditData({ ...editData, site_name: e.target.value })}
+                        placeholder="Nombre o referencia del sitio"
+                        className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold"
+                      />
+                    </div>
+                  )}
+                  <button type="button" onClick={() => {
+                    const next = !creatingSite;
+                    setCreatingSite(next);
+                    setEditData({ ...editData, create_site: next, site_id: next ? null : editData.site_id, site_name: next ? "" : editData.site_name, site_street: next ? "" : editData.site_street, site_number: next ? "" : editData.site_number, site_colony: next ? "" : editData.site_colony, site_zip: next ? "" : editData.site_zip, site_city: next ? "" : editData.site_city, site_state: next ? "" : editData.site_state, site_city_id: next ? null : editData.site_city_id, site_state_id: next ? null : editData.site_state_id, site_region: next ? "" : editData.site_region, site_lat: next ? null : editData.site_lat, site_lng: next ? null : editData.site_lng });
+                  }} className="text-xs font-bold text-primary underline underline-offset-4">
+                    {creatingSite ? "Elegir un sitio existente" : "Crear nuevo Sitio (Dirección de Entrega)"}
+                  </button>
+                </div>
 
                 <SmartSelector
                   label="CONTACTO EN SITIO"
@@ -1060,7 +1065,7 @@ export default function SolicitudDetallePage() {
                   options={relatedPartners
                     .filter(
                       (p) =>
-                        p.type === "contact" || p.id === solicitud.partner_id,
+                      p.type === "contact",
                     )
                     .map((p) => ({
                       id: p.id,
@@ -1133,24 +1138,30 @@ export default function SolicitudDetallePage() {
                       className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
                     />
                   </div>
-                  <input
-                    type="text"
-                    placeholder="CIUDAD"
-                    value={editData.site_city || ""}
-                    onChange={(e) =>
-                      setEditData({ ...editData, site_city: e.target.value })
-                    }
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
-                  />
-                  <input
-                    type="text"
-                    placeholder="ESTADO"
-                    value={editData.site_state || ""}
-                    onChange={(e) =>
-                      setEditData({ ...editData, site_state: e.target.value })
-                    }
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
-                  />
+                  <select
+                    value={editData.site_state_id || ""}
+                    onChange={(e) => {
+                      const state = states.find((item) => item.id === Number(e.target.value));
+                      setEditData({ ...editData, site_state_id: state?.id || null, site_state: state?.name || "", site_city_id: null, site_city: "", site_region: "" });
+                    }}
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase"
+                  >
+                    <option value="">ESTADO</option>
+                    {states.map((state) => <option key={state.id} value={state.id}>{state.name}</option>)}
+                  </select>
+                  <select
+                    value={editData.site_city_id || ""}
+                    disabled={!editData.site_state_id}
+                    onChange={(e) => {
+                      const city = cities.find((item) => item.id === Number(e.target.value));
+                      setEditData({ ...editData, site_city_id: city?.id || null, site_city: city?.name || "", site_region: "" });
+                    }}
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase disabled:opacity-50"
+                  >
+                    <option value="">CIUDAD</option>
+                    {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
+                  </select>
+                  <input readOnly placeholder="PLAZA (AUTOMÁTICA)" value={editData.site_region || ""} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content/60 text-sm font-black uppercase" />
                 </div>
               </div>
 
@@ -1216,19 +1227,16 @@ export default function SolicitudDetallePage() {
                       LAT
                     </span>
                     <input
-                      type="number"
-                      step="any"
+                      type="text"
                       placeholder="0.000000"
-                      value={editData.site_lat ?? ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          site_lat:
-                            e.target.value === ""
-                              ? null
-                              : parseFloat(e.target.value),
-                        })
-                      }
+                      value={editData.site_lat_raw ?? editData.site_lat ?? ""}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const parsed = parseCoordinate(raw, 90);
+                        setEditData({ ...editData, site_lat_raw: raw, ...(parsed !== null ? { site_lat: parsed } : {}) });
+                        setSiteErrors({ ...siteErrors, site_lat: raw && parsed === null ? "Latitud inválida (−90 a 90)" : "" });
+                      }}
+                      onBlur={() => setEditData(({ site_lat_raw: _raw, ...rest }: any) => rest)}
                       className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl pl-16 pr-6 py-5 text-base-content text-sm font-mono focus:border-(--brand-accent) transition-all outline-none"
                     />
                   </div>
@@ -1237,23 +1245,21 @@ export default function SolicitudDetallePage() {
                       LNG
                     </span>
                     <input
-                      type="number"
-                      step="any"
+                      type="text"
                       placeholder="0.000000"
-                      value={editData.site_lng ?? ""}
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          site_lng:
-                            e.target.value === ""
-                              ? null
-                              : parseFloat(e.target.value),
-                        })
-                      }
+                      value={editData.site_lng_raw ?? editData.site_lng ?? ""}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const parsed = parseCoordinate(raw, 180);
+                        setEditData({ ...editData, site_lng_raw: raw, ...(parsed !== null ? { site_lng: parsed } : {}) });
+                        setSiteErrors({ ...siteErrors, site_lng: raw && parsed === null ? "Longitud inválida (−180 a 180)" : "" });
+                      }}
+                      onBlur={() => setEditData(({ site_lng_raw: _raw, ...rest }: any) => rest)}
                       className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl pl-16 pr-6 py-5 text-base-content text-sm font-mono focus:border-(--brand-accent) transition-all outline-none"
                     />
                   </div>
                 </div>
+                {(siteErrors.site_lat || siteErrors.site_lng) && <p className="text-xs text-error">{siteErrors.site_lat || siteErrors.site_lng}</p>}
               </div>
 
               <button
@@ -1414,9 +1420,7 @@ export default function SolicitudDetallePage() {
                     label="Cierre previsto"
                     value={
                       solicitud.expected_closing
-                        ? new Date(
-                            solicitud.expected_closing,
-                          ).toLocaleDateString("es-MX", {
+                          ? new Date(`${solicitud.expected_closing}T00:00:00`).toLocaleDateString("es-MX", {
                             day: "2-digit",
                             month: "2-digit",
                             year: "numeric",
@@ -1461,6 +1465,27 @@ export default function SolicitudDetallePage() {
                 </button>
               </div>
             </div>
+          </div>
+          <div className="bg-base-200 rounded-[32px] p-6 sm:p-8 border border-base-content/5">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+              <div>
+                <h3 className="text-lg font-black uppercase tracking-tight">Cotizaciones</h3>
+                <p className="text-xs text-base-content/50">Historial directo de esta oportunidad</p>
+              </div>
+              <Link href={`/solicitud/${encodeURIComponent(id)}/cotizacion`} className="btn-brand px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest">Nueva cotización</Link>
+            </div>
+            {quotations.length === 0 ? (
+              <p className="text-sm text-base-content/45">Todavía no hay cotizaciones.</p>
+            ) : (
+              <div className="divide-y divide-base-content/5">
+                {quotations.map((quote) => (
+                  <Link key={quote.id} href={`/solicitud/${encodeURIComponent(id)}/cotizacion?quotation=${quote.id}`} className="flex items-center justify-between gap-4 py-4 hover:text-primary">
+                    <span><strong className="mr-3">{quote.name}</strong><span className="text-xs text-base-content/45">{quote.state}</span></span>
+                    <span className="font-bold">${Number(quote.amount_total || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

@@ -11,6 +11,9 @@ const API_BASE =
 const ODOO_HOST = API_BASE.replace(/\/api\/portal\/?$/, "");
 
 const nextConfig: NextConfig = {
+  experimental: {
+    proxyClientMaxBodySize: 60 * 1024 * 1024,
+  },
   // El proyecto es una app independiente: la raíz es esta carpeta.
   turbopack: {
     root: __dirname,

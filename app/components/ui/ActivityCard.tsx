@@ -36,7 +36,7 @@ function getStatusInfo(stat: string) {
       label: "Pre-Venta",
       next: "Ingeniería está evaluando factibilidad.",
     };
-  if (s.includes("ganada") || s.includes("won") || s.includes("activ"))
+  if (s.includes("concretado") || s.includes("ganada") || s.includes("won") || s.includes("activ"))
     return {
       color: "text-success",
       bg: "bg-success/10",

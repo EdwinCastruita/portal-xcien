@@ -37,14 +37,19 @@ export function parseLatLng(text: string): [number, number] | null {
   if (!text) return null;
   const t = text.trim();
   const patterns = [
-    /@(-?\d+\.\d+),(-?\d+\.\d+)/, // .../@19.43,-99.13,17z
-    /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/, // ...?q=19.43,-99.13
     /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/, // ...!3d19.43!4d-99.13
-    /^\s*(-?\d+\.\d+)\s*[, ]\s*(-?\d+\.\d+)\s*$/, // "19.43, -99.13"
+    /[?&](?:ll|q|query)=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/i,
+    /\/place\/(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/i,
+    /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/,
   ];
   for (const re of patterns) {
     const m = t.match(re);
-    if (m) return [parseFloat(m[1]), parseFloat(m[2])];
+    if (m) {
+      const lat = Number(m[1]);
+      const lng = Number(m[2]);
+      if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) return [lat, lng];
+    }
   }
   return null;
 }

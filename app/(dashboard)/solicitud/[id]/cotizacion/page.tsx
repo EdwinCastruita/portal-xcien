@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/app/components/ToastContext";
 import {
@@ -31,6 +31,8 @@ import { API_BASE, apiFetch, getCookie, SESSION_COOKIE } from "@/app/lib/api";
 export default function CotizacionPage() {
   const params = useParams();
   const id = params?.id as string;
+  const searchParams = useSearchParams();
+  const loadedQueryQuotation = useRef<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const [solicitud, setSolicitud] = useState<any>(null);
@@ -40,19 +42,22 @@ export default function CotizacionPage() {
   const [templates, setTemplates] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [analyticAccounts, setAnalyticAccounts] = useState<any[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(false);
 
   const [form, setForm] = useState({
-    payment_method: "Transferencia Bancaria",
     billing_address: "",
     partner_invoice_id: null as number | null,
     partner_shipping_id: null as number | null,
     template_id: null as number | null,
+    plan_id: null as number | null,
+    representative_id: null as number | null,
     expiration_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split("T")[0],
-    note: "",
   });
+  const [legalRepresentativeName, setLegalRepresentativeName] = useState("");
 
   const [lines, setLines] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
@@ -62,6 +67,7 @@ export default function CotizacionPage() {
 
   const [existingQuotations, setExistingQuotations] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const initialCriticalValues = useRef<any>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const { success, error: toastError } = useToast();
 
@@ -108,11 +114,18 @@ export default function CotizacionPage() {
           setProducts(
             resProd.products.map((p: any) => ({
               id: p.id,
-              name: p.name,
+              name: p.display_name || p.name,
               price: p.list_price ?? p.price ?? 0,
             })),
           );
         }
+
+        const [planRes, analyticRes] = await Promise.all([
+          apiFetch("/subscription_plans", { company: true }).catch(() => null),
+          apiFetch("/analytic_accounts", { company: true }).catch(() => null),
+        ]);
+        setPlans(Array.isArray(planRes?.plans) ? planRes.plans : []);
+        setAnalyticAccounts(Array.isArray(analyticRes?.accounts) ? analyticRes.accounts : []);
 
         setLines([
           {
@@ -156,18 +169,24 @@ export default function CotizacionPage() {
       const res = await apiFetch(`/quotations/${orderId}`, { company: true });
       const data = res.quotation;
       setEditingId(orderId);
-      setQuotation(null);
+      initialCriticalValues.current = {
+        shippingId: data.partner_shipping_id?.[0] || null,
+        templateId: data.sale_order_template_id?.[0] || null,
+        planId: data.plan_id?.[0] || null,
+        productIds: (data.order_lines || []).map((line: any) => line.product_id),
+      };
+      setQuotation(data);
       setEmailSent(false);
       setContract(data.contract || null);
       setContractFile(null);
       setForm({
-        payment_method: "Transferencia Bancaria",
         billing_address: "",
         partner_invoice_id: data.partner_invoice_id?.[0] || null,
         partner_shipping_id: data.partner_shipping_id?.[0] || null,
         template_id: data.sale_order_template_id?.[0] || null,
+        plan_id: data.plan_id?.[0] || null,
+        representative_id: data.representative?.[0] || null,
         expiration_date: data.validity_date || "",
-        note: data.note || "",
       });
       setLines(
         data.order_lines.map((l: any) => ({
@@ -176,6 +195,7 @@ export default function CotizacionPage() {
           name: l.name,
           quantity: l.quantity,
           price: l.price,
+          analytic_account_id: l.analytic_account_id ? Number(l.analytic_account_id) : null,
         })),
       );
     } catch (err) {
@@ -184,6 +204,13 @@ export default function CotizacionPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const queryId = searchParams?.get("quotation");
+    if (!queryId || loading || loadedQueryQuotation.current === queryId) return;
+    loadedQueryQuotation.current = queryId;
+    loadQuotation(Number(queryId));
+  }, [searchParams, loading]);
 
   const deleteQuotation = async (orderId: number) => {
     if (!confirm("¿Cancelar esta cotización?")) return;
@@ -201,6 +228,7 @@ export default function CotizacionPage() {
 
   const resetForm = () => {
     setEditingId(null);
+    initialCriticalValues.current = null;
     setQuotation(null);
     setEmailSent(false);
     setContract(null);
@@ -210,8 +238,10 @@ export default function CotizacionPage() {
       expiration_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0],
-      note: "",
+      plan_id: null,
+      representative_id: null,
     }));
+    setLegalRepresentativeName("");
     if (solicitud) {
       setLines([
         {
@@ -232,7 +262,8 @@ export default function CotizacionPage() {
         product_id: null,
         name: "",
         quantity: 1,
-        price: 0,
+          price: 0,
+          analytic_account_id: null,
         id: Math.random().toString(36).substr(2, 9),
       },
     ]);
@@ -276,6 +307,16 @@ export default function CotizacionPage() {
     const validLines = lines.filter((l) => l.product_id !== null);
     if (validLines.length === 0)
       return toastError("Por favor, selecciona al menos un producto.");
+    if (!form.plan_id)
+      return toastError("Selecciona el Plan Recurrente.");
+    if (editingId && initialCriticalValues.current) {
+      const original = initialCriticalValues.current;
+      const criticalChanged = original.shippingId !== (form.partner_shipping_id || null)
+        || original.templateId !== (form.template_id || null)
+        || original.planId !== (form.plan_id || null)
+        || JSON.stringify(original.productIds) !== JSON.stringify(validLines.map((line) => line.product_id));
+      if (criticalChanged && !window.confirm("El cambio en producto, plantilla, plan recurrente o dirección de entrega puede devolver la oportunidad a Ing. Pre-venta. ¿Deseas continuar?")) return;
+    }
 
     setSaving(true);
     try {
@@ -298,9 +339,19 @@ export default function CotizacionPage() {
       setContract(previewRes.quotation.contract || null);
       setContractFile(null);
       fetchHistory();
-      success(
-        isEdit ? "Cotización actualizada" : "Cotización generada con éxito",
-      );
+      if (isEdit && resVal?.opportunity_stage) {
+        const refreshed = await apiFetch(`/solicitudes/${id}`, { company: true });
+        setSolicitud(refreshed.solicitud);
+      }
+      initialCriticalValues.current = {
+        shippingId: form.partner_shipping_id || null,
+        templateId: form.template_id || null,
+        planId: form.plan_id || null,
+        productIds: validLines.map((line) => line.product_id),
+      };
+      success(isEdit && resVal?.opportunity_stage && resVal.opportunity_stage !== solicitud?.status
+        ? `Cotización actualizada. La oportunidad quedó en ${resVal.opportunity_stage}.`
+        : isEdit ? "Cotización actualizada" : "Cotización generada con éxito");
     } catch (err: any) {
       toastError(err.message || "Error inesperado al generar la cotización");
     } finally {
@@ -404,6 +455,10 @@ export default function CotizacionPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.message || "No se pudo descargar el contrato");
       }
+      if (res.headers.get("content-type")?.includes("application/json")) {
+        const data = await res.json();
+        throw new Error(data?.message || "No se pudo generar el contrato");
+      }
       const blob = await res.blob();
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -412,6 +467,29 @@ export default function CotizacionPage() {
       URL.revokeObjectURL(a.href);
     } catch (err: any) {
       toastError(err.message || "Error al descargar el contrato");
+    }
+  };
+
+  const printContract = async () => {
+    if (!currentOrderId) return;
+    try {
+      const url = new URL(`${API_BASE}/quotations/${currentOrderId}/contract/print`, window.location.origin);
+      const session = getCookie(SESSION_COOKIE);
+      if (session) url.searchParams.set("_sid", session);
+      const cid = getCookie("company_id");
+      if (cid) url.searchParams.set("_cid", cid);
+      const res = await fetch(url.toString());
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message || "No se pudo generar el contrato");
+      }
+      const blob = await res.blob();
+      if (blob.type !== "application/pdf") throw new Error("La respuesta no contiene un PDF de contrato");
+      const fileUrl = URL.createObjectURL(blob);
+      window.open(fileUrl, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
+    } catch (err: any) {
+      toastError(err.message || "Error al imprimir el contrato");
     }
   };
 
@@ -466,6 +544,11 @@ export default function CotizacionPage() {
         <div className="flex flex-wrap gap-3 w-full lg:w-auto">
           {quotation ? (
             <>
+              {editingId && (
+                <button onClick={() => setQuotation(null)} className="btn btn-ghost bg-base-300/50 hover:bg-base-300 flex-1 lg:flex-none h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest">
+                  Editar cotización
+                </button>
+              )}
               <button
                 onClick={resetForm}
                 className="btn btn-ghost bg-base-300/50 hover:bg-base-300 flex-1 lg:flex-none h-14 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest"
@@ -495,6 +578,12 @@ export default function CotizacionPage() {
                 className="btn btn-primary flex-1 lg:flex-none h-14 px-6 sm:px-10 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20"
               >
                 <Printer className="w-4 h-4 mr-2 shrink-0" /> Imprimir PDF
+              </button>
+              <button
+                onClick={printContract}
+                className="btn btn-ghost flex-1 lg:flex-none h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+              >
+                <FileSignature className="w-4 h-4 mr-2" /> Imprimir contrato
               </button>
             </>
           ) : (
@@ -572,25 +661,6 @@ export default function CotizacionPage() {
                   <div className="form-control w-full">
                     <label className="label mb-1">
                       <span className="label-text text-[10px] font-black uppercase tracking-widest opacity-40">
-                        Término de Pago
-                      </span>
-                    </label>
-                    <select
-                      value={form.payment_method}
-                      onChange={(e) =>
-                        setForm({ ...form, payment_method: e.target.value })
-                      }
-                      className="select select-bordered bg-base-100 h-14 px-6 rounded-2xl font-bold focus:border-primary appearance-none tracking-tight"
-                    >
-                      <option>Transferencia Bancaria</option>
-                      <option>Pago con Tarjeta</option>
-                      <option>Net 30</option>
-                      <option>Pago Anticipado</option>
-                    </select>
-                  </div>
-                  <div className="form-control w-full">
-                    <label className="label mb-1">
-                      <span className="label-text text-[10px] font-black uppercase tracking-widest opacity-40">
                         Plantilla Visual
                       </span>
                     </label>
@@ -611,6 +681,38 @@ export default function CotizacionPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div className="form-control w-full">
+                    <label className="label mb-1">
+                      <span className="label-text text-[10px] font-black uppercase tracking-widest opacity-40">Plan Recurrente *</span>
+                    </label>
+                    <select value={form.plan_id || ""} onChange={(e) => setForm({ ...form, plan_id: Number(e.target.value) || null })} className="select select-bordered bg-base-100 h-14 px-6 rounded-2xl font-bold">
+                      <option value="">Selecciona un plan…</option>
+                      {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
+                    </select>
+                    {plans.length === 0 && <span className="text-[10px] text-base-content/45">No se pudieron cargar planes recurrentes.</span>}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="form-control w-full">
+                    <label className="label mb-1"><span className="label-text text-[10px] font-black uppercase tracking-widest opacity-40">Representante Legal</span></label>
+                    <select value={form.representative_id || ""} onChange={(e) => setForm({ ...form, representative_id: Number(e.target.value) || null })} className="select select-bordered bg-base-100 h-14 px-6 rounded-2xl font-bold">
+                      <option value="">Seleccionar representante…</option>
+                      {addresses.filter((address) => address.type === "contact").map((contact) => <option key={contact.id} value={contact.id}>{contact.name}</option>)}
+                    </select>
+                    <div className="mt-3 flex gap-2">
+                      <input value={legalRepresentativeName} onChange={(e) => setLegalRepresentativeName(e.target.value)} placeholder="Nombre de un contacto nuevo" className="input input-bordered bg-base-100 h-12 min-w-0 flex-1 rounded-xl" />
+                      <button type="button" className="btn btn-outline btn-primary" disabled={!legalRepresentativeName.trim()} onClick={async () => {
+                        try {
+                          const result = await apiFetch(`/customers/${solicitud.partner_id}/contacts/create`, { method: "POST", company: true, body: { name: legalRepresentativeName.trim() } });
+                          const created = { id: result.id, name: result.name, type: "contact" };
+                          setAddresses((prev) => [...prev, created]);
+                          setForm((prev) => ({ ...prev, representative_id: result.id }));
+                          setLegalRepresentativeName("");
+                        } catch (err: any) { toastError(err.message || "No se pudo crear el contacto"); }
+                      }}>Agregar</button>
+                    </div>
                   </div>
                 </div>
 
@@ -719,6 +821,10 @@ export default function CotizacionPage() {
                           className="w-full bg-transparent text-[10px] font-bold text-base-content/30 uppercase outline-none focus:text-base-content"
                           placeholder="Propiedades adicionales o descripción..."
                         />
+                        <select value={l.analytic_account_id || ""} onChange={(e) => updateLine(l.id, "analytic_account_id", Number(e.target.value) || null)} className="select select-sm bg-base-200 w-full rounded-xl">
+                          <option value="">Cuenta analítica (opcional)</option>
+                          {analyticAccounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+                        </select>
                       </div>
                       <div className="form-control">
                         <label className="sm:hidden text-[9px] font-black uppercase tracking-widest text-base-content/35 mb-1 ml-1">
@@ -782,22 +888,6 @@ export default function CotizacionPage() {
                 </div>
               </div>
 
-              {/* Step 3: Notes */}
-              <div className="bg-base-200 rounded-[2.5rem] p-8 lg:p-12 border border-base-content/5 shadow-sm space-y-6">
-                <div className="flex items-center gap-3.5">
-                  <FileText className="w-6 h-6 text-primary" strokeWidth={1.75} />
-                  <h3 className="text-lg font-black tracking-tight uppercase">
-                    Condiciones Comerciales
-                  </h3>
-                </div>
-                <textarea
-                  value={form.note}
-                  onChange={(e) => setForm({ ...form, note: e.target.value })}
-                  rows={4}
-                  className="textarea bg-base-100 w-full rounded-3xl p-4 sm:p-6 md:p-8 font-medium border-base-content/5 focus:border-primary/20"
-                  placeholder="Ej: Oferta válida hasta fin de mes. Tiempos de entrega de 5-10 días hábiles..."
-                />
-              </div>
             </div>
           ) : (
             /* ── PREVIEW MODE ──
@@ -960,8 +1050,7 @@ export default function CotizacionPage() {
                     Cláusulas y Notas Especiales:
                   </h5>
                   <div className="text-[11px] text-slate-500 italic leading-[1.8] font-medium whitespace-pre-wrap">
-                    {form.note ||
-                      "Vigencia de 15 días. Sujeto a factibilidad técnica en sitio. Todos los precios están expresados en Moneda Nacional. El tiempo de implementación inicia una vez liquidado el anticipo."}
+                    Vigencia de 15 días. Sujeto a factibilidad técnica en sitio. Todos los precios están expresados en Moneda Nacional.
                   </div>
                 </div>
 
