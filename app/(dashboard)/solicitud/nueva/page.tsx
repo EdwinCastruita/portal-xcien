@@ -33,41 +33,6 @@ const steps = [
   { label: "Confirmación", icon: CheckCircle },
 ];
 
-const ESTADOS_MX = [
-  "Aguascalientes",
-  "Baja California",
-  "Baja California Sur",
-  "Campeche",
-  "Chiapas",
-  "Chihuahua",
-  "Ciudad de México",
-  "Coahuila",
-  "Colima",
-  "Durango",
-  "Guanajuato",
-  "Guerrero",
-  "Hidalgo",
-  "Jalisco",
-  "Estado de México",
-  "Michoacán",
-  "Morelos",
-  "Nayarit",
-  "Nuevo León",
-  "Oaxaca",
-  "Puebla",
-  "Querétaro",
-  "Quintana Roo",
-  "San Luis Potosí",
-  "Sinaloa",
-  "Sonora",
-  "Tabasco",
-  "Tamaulipas",
-  "Tlaxcala",
-  "Veracruz",
-  "Yucatán",
-  "Zacatecas",
-];
-
 // ─── Reusable Input ──
 function FormInput({
   label,
@@ -129,11 +94,15 @@ export default function NuevaSolicitudPage() {
   const [formData, setFormData] = useState({
     business_name: "",
     rfc: "",
+    person_type: "moral" as "fisica" | "moral",
+    regimen_societario_id: "" as number | "",
     contact_name: "",
     contact_email: "",
     contact_phone: "",
     city: "",
     state: "",
+    city_id: "" as number | "",
+    state_id: "" as number | "",
     expected_closing: "",
     product_id: "" as number | "",
     plan_speed: "",
@@ -148,6 +117,42 @@ export default function NuevaSolicitudPage() {
     { id: number; name: string; price: number }[]
   >([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+
+  // Catálogos reales de Odoo (`res.country.state` / `res.city`) para el
+  // paso "Ubicación" — reemplaza el array hardcodeado de estados y el
+  // input de texto libre para ciudad (QA v0.9 punto 1).
+  const [states, setStates] = useState<{ id: number; name: string }[]>([]);
+  const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+
+  // Catálogo de Régimen Capital (`res.partner.regimen`, odoo/action-2914)
+  // — solo se usa cuando la Razón Social es Persona Moral (QA v0.9 punto 2).
+  const [regimenes, setRegimenes] = useState<{ id: number; name: string; full_name: string }[]>([]);
+
+  useEffect(() => {
+    apiFetch("/states", { company: true })
+      .then((res) => setStates(Array.isArray(res?.states) ? res.states : []))
+      .catch((err) => console.error("Error fetching states", err));
+    apiFetch("/regimenes", { company: true })
+      .then((res) => setRegimenes(Array.isArray(res?.regimenes) ? res.regimenes : []))
+      .catch((err) => console.error("Error fetching regimenes", err));
+  }, []);
+
+  useEffect(() => {
+    if (!formData.state_id) {
+      setCities([]);
+      return;
+    }
+    setLoadingCities(true);
+    apiFetch("/cities", {
+      method: "POST",
+      company: true,
+      body: { state_id: formData.state_id },
+    })
+      .then((res) => setCities(Array.isArray(res?.cities) ? res.cities : []))
+      .catch((err) => console.error("Error fetching cities", err))
+      .finally(() => setLoadingCities(false));
+  }, [formData.state_id]);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -227,10 +232,10 @@ export default function NuevaSolicitudPage() {
 
   const goNext = async () => {
     if (currentStep === 1) {
-      if (!formData.city.trim() || !formData.state.trim()) {
+      if (!formData.state_id || !formData.city_id) {
         setErrors({
-          city: !formData.city.trim() ? "Ciudad es obligatoria" : "",
-          state: !formData.state.trim() ? "Estado es obligatorio" : "",
+          city: !formData.city_id ? "Ciudad es obligatoria" : "",
+          state: !formData.state_id ? "Estado es obligatorio" : "",
         });
         return;
       }
@@ -447,36 +452,78 @@ export default function NuevaSolicitudPage() {
             </div>
             <div className="space-y-6">
               <div className="space-y-2 group">
-                <label className="text-[10px] font-black text-base-content/50 ml-1 uppercase tracking-[0.2em] group-focus-within:text-[var(--brand-accent)]">
+                <label htmlFor="request-state" className="text-[10px] font-black text-base-content/50 ml-1 uppercase tracking-[0.2em] group-focus-within:text-[var(--brand-accent)]">
                   ESTADO *
                 </label>
                 <div className="relative">
                   <select
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
+                    id="request-state"
+                    name="state_id"
+                    value={formData.state_id}
+                    onChange={(e) => {
+                      const state = states.find((s) => s.id === Number(e.target.value));
+                      setFormData((prev) => ({
+                        ...prev,
+                        state_id: state?.id || "",
+                        state: state?.name || "",
+                        city_id: "",
+                        city: "",
+                      }));
+                      if (errors.state) setErrors((prev) => ({ ...prev, state: "" }));
+                    }}
                     className={`w-full bg-base-200 border rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all appearance-none cursor-pointer text-base-content font-medium
                         ${errors.state ? "border-error/40" : "border-base-content/[0.05] hover:border-base-content/[0.12]"}`}
                   >
                     <option value="">Selecciona un estado...</option>
-                    {ESTADOS_MX.map((state) => (
-                      <option key={state} value={state}>
-                        {state}
+                    {states.map((state) => (
+                      <option key={state.id} value={state.id}>
+                        {state.name}
                       </option>
                     ))}
                   </select>
                   <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/45 pointer-events-none group-focus-within:text-[var(--brand-accent)]" />
                 </div>
               </div>
-              <FormInput
-                label="CIUDAD"
-                name="city"
-                placeholder="Ej: Monterrey"
-                icon={MapPin}
-                value={formData.city}
-                onChange={handleChange}
-                error={errors.city}
-              />
+              <div className="space-y-2 group">
+                <label htmlFor="request-city" className="text-[10px] font-black text-base-content/50 ml-1 uppercase tracking-[0.2em] group-focus-within:text-[var(--brand-accent)]">
+                  CIUDAD *
+                </label>
+                <div className="relative">
+                  <select
+                    id="request-city"
+                    name="city_id"
+                    value={formData.city_id}
+                    disabled={!formData.state_id}
+                    onChange={(e) => {
+                      const city = cities.find((c) => c.id === Number(e.target.value));
+                      setFormData((prev) => ({
+                        ...prev,
+                        city_id: city?.id || "",
+                        city: city?.name || "",
+                      }));
+                      if (errors.city) setErrors((prev) => ({ ...prev, city: "" }));
+                    }}
+                    className={`w-full bg-base-200 border rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[var(--brand-accent)]/50 transition-all appearance-none cursor-pointer text-base-content font-medium disabled:opacity-50
+                        ${errors.city ? "border-error/40" : "border-base-content/[0.05] hover:border-base-content/[0.12]"}`}
+                  >
+                    <option value="">
+                      {!formData.state_id ? "Selecciona un estado primero..." : loadingCities ? "Cargando ciudades..." : "Selecciona una ciudad..."}
+                    </option>
+                    {cities.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/45 pointer-events-none group-focus-within:text-[var(--brand-accent)]" />
+                </div>
+                {errors.city && (
+                  <p className="text-error text-[10px] font-bold uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-error" />
+                    {errors.city}
+                  </p>
+                )}
+              </div>
             </div>
 
             <button
@@ -588,15 +635,70 @@ export default function NuevaSolicitudPage() {
                   </h3>
                 </div>
                 <div className="space-y-4">
-                  <FormInput
-                    label="RFC (OPCIONAL)"
-                    name="rfc"
-                    placeholder="Captúralo si lo tienes disponible"
-                    icon={Search}
-                    value={formData.rfc}
-                    onChange={handleChange}
-                    required={false}
-                  />
+                  {/* Persona Física / Persona Moral — determina el tipo de
+                      contacto a crear en Odoo (QA v0.9 punto 2). */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-base-content/50 ml-1 uppercase tracking-[0.2em]">
+                      TIPO DE PERSONA
+                    </label>
+                    <div className="flex gap-2 bg-base-200 border border-base-content/[0.05] rounded-2xl p-1.5">
+                      {([
+                        { value: "moral", label: "Persona Moral" },
+                        { value: "fisica", label: "Persona Física" },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              person_type: opt.value,
+                              regimen_societario_id: opt.value === "fisica" ? "" : prev.regimen_societario_id,
+                            }))
+                          }
+                          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                            formData.person_type === opt.value
+                              ? "chip-selected"
+                              : "text-base-content/55 hover:text-base-content hover:bg-base-content/[0.05]"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <FormInput
+                      label="RFC (OPCIONAL)"
+                      name="rfc"
+                      placeholder="Captúralo si lo tienes disponible"
+                      icon={Search}
+                      value={formData.rfc}
+                      onChange={handleChange}
+                      required={false}
+                    />
+                    <p className="mt-2 text-[10px] text-base-content/45 font-medium ml-1">
+                      Captura el RFC genérico si no tienes el RFC disponible (ej. XAXX010101000 para Persona Moral o XEXX010101000 para Persona Física), para no detener el proceso de venta.
+                    </p>
+                  </div>
+                  {formData.person_type === "moral" && (
+                    <SmartSelector
+                      label="RÉGIMEN CAPITAL (OPCIONAL)"
+                      placeholder="Seleccionar régimen..."
+                      options={regimenes.map((r) => ({
+                        id: r.id,
+                        name: r.name,
+                        subtitle: r.full_name,
+                      }))}
+                      selectedId={formData.regimen_societario_id}
+                      onSelect={(opt) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          regimen_societario_id: opt ? Number(opt.id) : "",
+                        }))
+                      }
+                    />
+                  )}
                   <div className="relative">
                     <FormInput
                       label="RAZÓN SOCIAL"

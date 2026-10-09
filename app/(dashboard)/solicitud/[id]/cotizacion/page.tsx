@@ -24,9 +24,12 @@ import {
   Receipt,
   Trash2,
   UploadCloud,
+  User,
+  Wallet,
   Zap,
 } from "lucide-react";
 import { API_BASE, apiFetch, getCookie, SESSION_COOKIE } from "@/app/lib/api";
+import SmartSelector from "@/app/components/ui/SmartSelector";
 
 export default function CotizacionPage() {
   const params = useParams();
@@ -479,12 +482,16 @@ export default function CotizacionPage() {
       const cid = getCookie("company_id");
       if (cid) url.searchParams.set("_cid", cid);
       const res = await fetch(url.toString());
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+      const contentType = res.headers.get("content-type") || "";
+      // El backend puede responder 200 OK con un JSON de error de negocio
+      // (p.ej. "FALTA información de Representante Legal") en vez de un
+      // PDF — hay que leer ese mensaje real en vez de mostrar el genérico
+      // "La respuesta no contiene un PDF de contrato" (QA v0.9 punto 10).
+      if (!res.ok || !contentType.includes("application/pdf")) {
+        const data = await res.clone().json().catch(() => null);
         throw new Error(data?.message || "No se pudo generar el contrato");
       }
       const blob = await res.blob();
-      if (blob.type !== "application/pdf") throw new Error("La respuesta no contiene un PDF de contrato");
       const fileUrl = URL.createObjectURL(blob);
       window.open(fileUrl, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
@@ -659,48 +666,38 @@ export default function CotizacionPage() {
                     />
                   </div>
                   <div className="form-control w-full">
-                    <label className="label mb-1">
-                      <span className="label-text text-[10px] font-black uppercase tracking-widest opacity-40">
-                        Plantilla Visual
-                      </span>
-                    </label>
-                    <select
-                      value={form.template_id || ""}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          template_id: parseInt(e.target.value) || null,
-                        })
-                      }
-                      className="select select-bordered bg-base-100 h-14 px-6 rounded-2xl font-bold focus:border-primary appearance-none tracking-tight"
-                    >
-                      <option value="">Personalizada (Standard)</option>
-                      {templates.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
+                    <SmartSelector
+                      label="Plantilla Visual"
+                      placeholder="Personalizada (Standard)"
+                      icon={FileText}
+                      options={templates.map((t) => ({ id: t.id, name: t.name }))}
+                      selectedId={form.template_id}
+                      onSelect={(opt) => setForm({ ...form, template_id: opt ? Number(opt.id) : null })}
+                    />
                   </div>
                   <div className="form-control w-full">
-                    <label className="label mb-1">
-                      <span className="label-text text-[10px] font-black uppercase tracking-widest opacity-40">Plan Recurrente *</span>
-                    </label>
-                    <select value={form.plan_id || ""} onChange={(e) => setForm({ ...form, plan_id: Number(e.target.value) || null })} className="select select-bordered bg-base-100 h-14 px-6 rounded-2xl font-bold">
-                      <option value="">Selecciona un plan…</option>
-                      {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
-                    </select>
+                    <SmartSelector
+                      label="Plan Recurrente *"
+                      placeholder="Selecciona un plan…"
+                      icon={CreditCard}
+                      options={plans.map((plan) => ({ id: plan.id, name: plan.name }))}
+                      selectedId={form.plan_id}
+                      onSelect={(opt) => setForm({ ...form, plan_id: opt ? Number(opt.id) : null })}
+                    />
                     {plans.length === 0 && <span className="text-[10px] text-base-content/45">No se pudieron cargar planes recurrentes.</span>}
                   </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="form-control w-full">
-                    <label className="label mb-1"><span className="label-text text-[10px] font-black uppercase tracking-widest opacity-40">Representante Legal</span></label>
-                    <select value={form.representative_id || ""} onChange={(e) => setForm({ ...form, representative_id: Number(e.target.value) || null })} className="select select-bordered bg-base-100 h-14 px-6 rounded-2xl font-bold">
-                      <option value="">Seleccionar representante…</option>
-                      {addresses.filter((address) => address.type === "contact").map((contact) => <option key={contact.id} value={contact.id}>{contact.name}</option>)}
-                    </select>
+                    <SmartSelector
+                      label="Representante Legal"
+                      placeholder="Seleccionar representante…"
+                      icon={User}
+                      options={addresses.filter((address) => address.type === "contact").map((contact) => ({ id: contact.id, name: contact.name }))}
+                      selectedId={form.representative_id}
+                      onSelect={(opt) => setForm({ ...form, representative_id: opt ? Number(opt.id) : null })}
+                    />
                     <div className="mt-3 flex gap-2">
                       <input value={legalRepresentativeName} onChange={(e) => setLegalRepresentativeName(e.target.value)} placeholder="Nombre de un contacto nuevo" className="input input-bordered bg-base-100 h-12 min-w-0 flex-1 rounded-xl" />
                       <button type="button" className="btn btn-outline btn-primary" disabled={!legalRepresentativeName.trim()} onClick={async () => {
@@ -721,43 +718,23 @@ export default function CotizacionPage() {
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-base-content/40">
                       <Building2 className="w-3.5 h-3.5" /> Facturación
                     </div>
-                    <select
-                      value={form.partner_invoice_id || ""}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          partner_invoice_id: parseInt(e.target.value) || null,
-                        })
-                      }
-                      className="select bg-base-100 w-full h-14 rounded-2xl font-bold"
-                    >
-                      {addresses.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name} [{a.city || "S/L"}]
-                        </option>
-                      ))}
-                    </select>
+                    <SmartSelector
+                      placeholder="Seleccionar dirección de facturación…"
+                      options={addresses.map((a) => ({ id: a.id, name: `${a.name} [${a.city || "S/L"}]` }))}
+                      selectedId={form.partner_invoice_id}
+                      onSelect={(opt) => setForm({ ...form, partner_invoice_id: opt ? Number(opt.id) : null })}
+                    />
                   </div>
                   <div className="form-control w-full bg-base-300/30 p-6 rounded-3xl space-y-4">
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-base-content/40">
                       <MapPin className="w-3.5 h-3.5" /> Punto de Entrega
                     </div>
-                    <select
-                      value={form.partner_shipping_id || ""}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          partner_shipping_id: parseInt(e.target.value) || null,
-                        })
-                      }
-                      className="select bg-base-100 w-full h-14 rounded-2xl font-bold"
-                    >
-                      {addresses.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name} [{a.city || "S/L"}]
-                        </option>
-                      ))}
-                    </select>
+                    <SmartSelector
+                      placeholder="Seleccionar punto de entrega…"
+                      options={addresses.map((a) => ({ id: a.id, name: `${a.name} [${a.city || "S/L"}]` }))}
+                      selectedId={form.partner_shipping_id}
+                      onSelect={(opt) => setForm({ ...form, partner_shipping_id: opt ? Number(opt.id) : null })}
+                    />
                   </div>
                 </div>
               </div>
@@ -793,26 +770,13 @@ export default function CotizacionPage() {
                       className="grid grid-cols-2 sm:grid-cols-[1fr_80px_140px_48px] gap-3 sm:gap-4 items-center bg-base-100 p-4 sm:p-6 rounded-3xl border border-base-content/5 group hover:border-primary/20 transition-all"
                     >
                       <div className="col-span-2 sm:col-span-1 space-y-2">
-                        <select
-                          value={l.product_id || ""}
-                          onChange={(e) =>
-                            updateLine(l.id, "product_id", e.target.value)
-                          }
-                          className="w-full bg-transparent text-sm font-black text-primary outline-none cursor-pointer"
-                        >
-                          <option value="" className="bg-base-100">
-                            Seleccionar servicio...
-                          </option>
-                          {products.map((p) => (
-                            <option
-                              key={p.id}
-                              value={p.id}
-                              className="bg-base-100"
-                            >
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
+                        <SmartSelector
+                          size="sm"
+                          placeholder="Seleccionar servicio..."
+                          options={products.map((p) => ({ id: p.id, name: p.name, extra: `$${Number(p.price || 0).toLocaleString()}` }))}
+                          selectedId={l.product_id}
+                          onSelect={(opt) => updateLine(l.id, "product_id", opt ? Number(opt.id) : null)}
+                        />
                         <input
                           value={l.name}
                           onChange={(e) =>
@@ -821,10 +785,14 @@ export default function CotizacionPage() {
                           className="w-full bg-transparent text-[10px] font-bold text-base-content/30 uppercase outline-none focus:text-base-content"
                           placeholder="Propiedades adicionales o descripción..."
                         />
-                        <select value={l.analytic_account_id || ""} onChange={(e) => updateLine(l.id, "analytic_account_id", Number(e.target.value) || null)} className="select select-sm bg-base-200 w-full rounded-xl">
-                          <option value="">Cuenta analítica (opcional)</option>
-                          {analyticAccounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
-                        </select>
+                        <SmartSelector
+                          size="sm"
+                          placeholder="Cuenta analítica (opcional)"
+                          icon={Wallet}
+                          options={analyticAccounts.map((account) => ({ id: account.id, name: account.name }))}
+                          selectedId={l.analytic_account_id}
+                          onSelect={(opt) => updateLine(l.id, "analytic_account_id", opt ? Number(opt.id) : null)}
+                        />
                       </div>
                       <div className="form-control">
                         <label className="sm:hidden text-[9px] font-black uppercase tracking-widest text-base-content/35 mb-1 ml-1">

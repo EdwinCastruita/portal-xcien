@@ -19,6 +19,10 @@ interface SmartSelectorProps {
   placeholder?: string;
   icon?: LucideIcon;
   renderOption?: (option: Option) => React.ReactNode;
+  /** "sm" = variante compacta para usarse dentro de filas/tablas (p.ej.
+   * la línea de producto de una cotización), sin el padding/tamaño de
+   * fuente del selector de página completa. */
+  size?: "default" | "sm";
 }
 
 export default function SmartSelector({ 
@@ -28,8 +32,10 @@ export default function SmartSelector({
     label, 
     placeholder = "Seleccionar...", 
     icon: Icon,
-    renderOption
+    renderOption,
+    size = "default",
 }: SmartSelectorProps) {
+  const compact = size === "sm";
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,10 +45,15 @@ export default function SmartSelector({
 
   const selectedOption = options.find(o => String(o.id) === String(selectedId));
 
-  const filteredOptions = options.filter(o => 
-    o.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (o.subtitle && o.subtitle.toLowerCase().includes(searchTerm.toLowerCase()))
-  ).slice(0, 50);
+  // Búsqueda "fuzzy" por tokens: cada palabra escrita debe aparecer (en
+  // cualquier orden) en el nombre o subtítulo de la opción, en vez de
+  // exigir el texto completo como substring exacto. Así "venta directa"
+  // encuentra "Comisiones Ventas Directas" aunque el orden no coincida.
+  const tokens = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
+  const filteredOptions = options.filter(o => {
+    const haystack = `${o.name} ${o.subtitle || ""}`.toLowerCase();
+    return tokens.every(token => haystack.includes(token));
+  }).slice(0, 50);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -89,15 +100,15 @@ export default function SmartSelector({
       <div
         ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-base-content/[0.03] border ${isOpen ? 'border-(--brand-accent)/50 shadow-[0_0_30px_var(--brand-accent-glow)] ring-1 ring-(--brand-accent)/20' : 'border-base-content/10'} rounded-2xl px-6 py-5 cursor-pointer transition-all flex items-center justify-between group hover:bg-base-content/[0.05]`}
+        className={`w-full bg-base-content/[0.03] border ${isOpen ? 'border-(--brand-accent)/50 shadow-[0_0_30px_var(--brand-accent-glow)] ring-1 ring-(--brand-accent)/20' : 'border-base-content/10'} ${compact ? 'rounded-xl px-4 py-2.5' : 'rounded-2xl px-6 py-5'} cursor-pointer transition-all flex items-center justify-between group hover:bg-base-content/[0.05]`}
       >
         <div className="flex items-center gap-4 overflow-hidden">
           {Icon && <Icon className={`w-4 h-4 transition-colors ${selectedOption ? 'text-(--brand-accent)' : 'text-base-content/40'}`} />}
-          <span className={`text-sm font-black uppercase truncate tracking-tight ${selectedOption ? 'text-base-content' : 'text-base-content/40'}`}>
+          <span className={`${compact ? 'text-xs' : 'text-sm'} font-black uppercase truncate tracking-tight ${selectedOption ? 'text-base-content' : 'text-base-content/40'}`}>
             {selectedOption ? selectedOption.name : placeholder}
           </span>
         </div>
-        <ChevronDown className={`w-5 h-5 text-base-content/40 group-hover:text-base-content transition-all ${isOpen ? 'rotate-180 text-(--brand-accent)' : ''}`} />
+        <ChevronDown className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-base-content/40 group-hover:text-base-content transition-all ${isOpen ? 'rotate-180 text-(--brand-accent)' : ''}`} />
       </div>
 
       {isOpen && menuPosition && typeof document !== 'undefined' && createPortal(

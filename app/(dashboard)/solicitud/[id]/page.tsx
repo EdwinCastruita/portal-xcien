@@ -39,6 +39,8 @@ import {
   Award,
   Info,
   Copy,
+  XCircle,
+  UserPlus,
 } from "lucide-react";
 import SmartSelector from "@/app/components/ui/SmartSelector";
 import StageStepper from "@/app/components/ui/StageStepper";
@@ -150,15 +152,36 @@ export default function SolicitudDetallePage() {
   const [showSiteEditor, setShowSiteEditor] = useState(false);
   const [showOpportunityEditor, setShowOpportunityEditor] = useState(false);
   const [showContactEditor, setShowContactEditor] = useState(false);
+  const [showClientEditor, setShowClientEditor] = useState(false);
   const { success, error: toastError } = useToast();
   const [siteErrors, setSiteErrors] = useState<Record<string, string>>({});
   const [autoOpenedSetup, setAutoOpenedSetup] = useState(false);
+
+  // Régimen Capital (catálogo `res.partner.regimen`, odoo/action-2914) —
+  // usado en el drawer "Editar Cliente" (QA v0.9 punto 4).
+  const [regimenes, setRegimenes] = useState<{ id: number; name: string; full_name: string }[]>([]);
+
+  // Marcar como Perdida (QA v0.9 punto 12).
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [lostReasons, setLostReasons] = useState<{ id: number; name: string }[]>([]);
+  const [lostSubreasons, setLostSubreasons] = useState<{ id: number; name: string }[]>([]);
+  const [lostReasonId, setLostReasonId] = useState<number | null>(null);
+  const [lostSubreasonId, setLostSubreasonId] = useState<number | null>(null);
+  const [lostFeedback, setLostFeedback] = useState("");
+  const [markingLost, setMarkingLost] = useState(false);
+
+  // Alta inline de contacto nuevo para "Contacto en Sitio" (QA v0.9 punto 13).
+  const [newSiteContactName, setNewSiteContactName] = useState("");
+  const [creatingSiteContact, setCreatingSiteContact] = useState(false);
 
   // All opportunities state
   const [opportunities, setOpportunities] = useState<any[]>([]);
   const [loadingOpps, setLoadingOpps] = useState(false);
   const [quotations, setQuotations] = useState<any[]>([]);
   const [relatedPartners, setRelatedPartners] = useState<any[]>([]);
+  const [sites, setSites] = useState<any[]>([]);
+  const [loadingSites, setLoadingSites] = useState(false);
+  const [siteLoadError, setSiteLoadError] = useState("");
   const [states, setStates] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
   const [creatingSite, setCreatingSite] = useState(false);
@@ -248,10 +271,62 @@ export default function SolicitudDetallePage() {
   }, [solicitud?.partner_id]);
 
   useEffect(() => {
+    const pid = solicitud?.partner_id;
+    if (!pid) {
+      setSites([]);
+      return;
+    }
+    let active = true;
+    setLoadingSites(true);
+    setSiteLoadError("");
+    setSites([]);
+    apiFetch(`/customers/${pid}/sites`, { company: true })
+      .then((res) => {
+        if (!active) return;
+        const records = Array.isArray(res?.sites) ? res.sites : [];
+        setSites(records.map((site: any) => ({
+          ...site,
+          city: site.city_name || site.city?.name || site.city || "",
+          city_id: site.city_id || site.city?.id || null,
+          state: site.state_name || site.state?.name || site.state || "",
+          state_id: site.state_id || site.state?.id || null,
+        })));
+      })
+      .catch((err: any) => {
+        if (active) setSiteLoadError(err.message || "No se pudieron cargar los sitios de Odoo.");
+      })
+      .finally(() => {
+        if (active) setLoadingSites(false);
+      });
+    return () => { active = false; };
+  }, [solicitud?.partner_id]);
+
+  useEffect(() => {
     apiFetch("/states", { company: true })
       .then((res) => setStates(Array.isArray(res?.states) ? res.states : []))
       .catch((err) => console.error("Error fetching states", err));
+    apiFetch("/regimenes", { company: true })
+      .then((res) => setRegimenes(Array.isArray(res?.regimenes) ? res.regimenes : []))
+      .catch((err) => console.error("Error fetching regimenes", err));
+    apiFetch("/lost_reasons", { company: true })
+      .then((res) => setLostReasons(Array.isArray(res?.lost_reasons) ? res.lost_reasons : []))
+      .catch((err) => console.error("Error fetching lost_reasons", err));
   }, []);
+
+  useEffect(() => {
+    if (!lostReasonId) {
+      setLostSubreasons([]);
+      setLostSubreasonId(null);
+      return;
+    }
+    apiFetch("/lost_subreasons", {
+      method: "POST",
+      company: true,
+      body: { lost_reason_id: lostReasonId },
+    })
+      .then((res) => setLostSubreasons(Array.isArray(res?.lost_subreasons) ? res.lost_subreasons : []))
+      .catch((err) => console.error("Error fetching lost_subreasons", err));
+  }, [lostReasonId]);
 
   useEffect(() => {
     if (!editData.site_state_id) {
@@ -356,6 +431,50 @@ export default function SolicitudDetallePage() {
       contact_edit: true,
     });
     setShowContactEditor(true);
+  };
+
+  const openClientDrawer = () => {
+    const client = solicitud.client || {};
+    setEditData({
+      rfc: solicitud.rfc || "",
+      street: client.street || "",
+      street_number: client.street_number || "",
+      street_number2: client.street_number2 || "",
+      colony: client.colony || "",
+      zip: client.zip || "",
+      regimen_societario_id: client.regimen_societario_id || null,
+      company_type: client.company_type || "company",
+    });
+    setShowClientEditor(true);
+  };
+
+  const openLostModal = () => {
+    setLostReasonId(null);
+    setLostSubreasonId(null);
+    setLostFeedback("");
+    setShowLostModal(true);
+  };
+
+  const submitLost = async () => {
+    setMarkingLost(true);
+    try {
+      await apiFetch(`/leads/${id}/lost`, {
+        method: "POST",
+        company: true,
+        body: {
+          lost_reason_id: lostReasonId || undefined,
+          lost_subreason_id: lostSubreasonId || undefined,
+          lost_feedback: lostFeedback || undefined,
+        },
+      });
+      success("Oportunidad marcada como perdida");
+      setShowLostModal(false);
+      router.push("/solicitudes");
+    } catch (err: any) {
+      toastError(err.message || "No se pudo marcar como perdida");
+    } finally {
+      setMarkingLost(false);
+    }
   };
 
   const openSiteDrawer = () => {
@@ -561,6 +680,26 @@ export default function SolicitudDetallePage() {
               >
                 <Pencil className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
                 Editar oportunidad
+              </button>
+              <button
+                onClick={openClientDrawer}
+                className="btn-cta-tertiary flex-1 md:flex-none px-6 py-5 rounded-2xl text-[10px] flex items-center justify-center gap-3 group"
+              >
+                <Building2 className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
+                Editar cliente
+              </button>
+              <button
+                onClick={openSiteDrawer}
+                className="btn-cta-tertiary flex-1 md:flex-none px-6 py-5 rounded-2xl text-[10px] flex items-center justify-center gap-3 group"
+              >
+                <MapPin className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
+                Editar sitio
+              </button>
+              <button
+                onClick={openLostModal}
+                className="btn-cta-tertiary flex-1 md:flex-none px-6 py-5 rounded-2xl text-[10px] flex items-center justify-center gap-3 group text-error/60 hover:text-error"
+              >
+                <XCircle className="w-4 h-4" /> Marcar como perdida
               </button>
             </>
           ) : (
@@ -977,6 +1116,79 @@ export default function SolicitudDetallePage() {
         </div>
       )}
 
+      {/* ─── Client Fiscal Data Drawer ─── */}
+      {showClientEditor && (
+        <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-md flex justify-end animate-fade-in">
+          <div className="w-full max-w-2xl h-full bg-base-300 border-l border-base-content/10 shadow-[0_0_150px_rgba(0,0,0,1)] p-6 md:p-12 overflow-y-auto animate-slide-in-from-right">
+            <div className="flex items-start justify-between gap-6 mb-10">
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Building2 className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">DATOS FISCALES DEL CLIENTE</h2>
+                  <p className="text-base-content/50 text-[10px] font-black uppercase tracking-[0.2em] mt-2">RFC Y DOMICILIO DE FACTURACIÓN</p>
+                </div>
+              </div>
+              <button onClick={() => setShowClientEditor(false)} className="w-12 h-12 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">RFC</label>
+                <input value={editData.rfc || ""} onChange={(e) => setEditData({ ...editData, rfc: e.target.value.toUpperCase() })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-mono uppercase focus:border-primary/50" />
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2 space-y-2">
+                  <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Calle</label>
+                  <input value={editData.street || ""} onChange={(e) => setEditData({ ...editData, street: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Número exterior</label>
+                  <input value={editData.street_number || ""} onChange={(e) => setEditData({ ...editData, street_number: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Número interior</label>
+                  <input value={editData.street_number2 || ""} onChange={(e) => setEditData({ ...editData, street_number2: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Colonia</label>
+                  <input value={editData.colony || ""} onChange={(e) => setEditData({ ...editData, colony: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Código Postal</label>
+                  <input value={editData.zip || ""} onChange={(e) => setEditData({ ...editData, zip: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                </div>
+              </div>
+
+              {editData.company_type === "company" && (
+                <SmartSelector
+                  label="RÉGIMEN CAPITAL"
+                  placeholder="Seleccionar régimen..."
+                  options={regimenes.map((r) => ({ id: r.id, name: r.name, subtitle: r.full_name }))}
+                  selectedId={editData.regimen_societario_id}
+                  onSelect={(opt) => setEditData({ ...editData, regimen_societario_id: opt ? Number(opt.id) : null })}
+                />
+              )}
+
+              <button
+                onClick={async () => {
+                  const ok = await saveEdit();
+                  if (ok) setShowClientEditor(false);
+                }}
+                disabled={saving}
+                className="w-full btn-brand py-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Save className="w-4 h-4" /> Guardar datos fiscales</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ─── Site Editor Drawer ─── */}
       {showSiteEditor && (
         <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-md flex justify-end animate-fade-in">
@@ -1010,14 +1222,14 @@ export default function SolicitudDetallePage() {
                   {!creatingSite ? (
                     <SmartSelector
                       label="SITIO (CLIENTE FINAL)"
-                      placeholder="Buscar sitio..."
+                      placeholder={loadingSites ? "Cargando sitios de Odoo..." : "Buscar sitio..."}
                       icon={Building2}
-                      options={relatedPartners
-                        .filter((p) => p.type === "delivery" || p.id === editData.site_id)
+                      options={[...sites, ...relatedPartners.filter((p) => p.id === editData.site_id && !sites.some((site) => site.id === p.id))]
+                        .filter((p) => p.type === "delivery" || p.type === "other" || p.id === editData.site_id)
                         .map((p) => ({ id: p.id, name: p.name, subtitle: p.city }))}
                       selectedId={editData.site_id}
                       onSelect={(opt) => {
-                        const partner = relatedPartners.find((p) => p.id === opt?.id);
+                        const partner = sites.find((p) => p.id === opt?.id) || relatedPartners.find((p) => p.id === opt?.id);
                         setEditData({
                           ...editData,
                           site_id: opt ? Number(opt.id) : null,
@@ -1049,6 +1261,8 @@ export default function SolicitudDetallePage() {
                       />
                     </div>
                   )}
+                  {!creatingSite && siteLoadError && <p className="text-xs text-error">{siteLoadError}</p>}
+                  {!creatingSite && !loadingSites && !siteLoadError && sites.length === 0 && <p className="text-xs text-base-content/50">Odoo no tiene sitios existentes para este cliente. Puedes crear uno nuevo.</p>}
                   <button type="button" onClick={() => {
                     const next = !creatingSite;
                     setCreatingSite(next);
@@ -1087,6 +1301,52 @@ export default function SolicitudDetallePage() {
                     });
                   }}
                 />
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={newSiteContactName}
+                    onChange={(e) => setNewSiteContactName(e.target.value)}
+                    placeholder="Nombre de un contacto nuevo"
+                    className="input input-bordered bg-base-100 h-12 min-w-0 flex-1 rounded-xl"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-primary"
+                    disabled={!newSiteContactName.trim() || creatingSiteContact || !solicitud.partner_id}
+                    onClick={async () => {
+                      setCreatingSiteContact(true);
+                      try {
+                        const result = await apiFetch(`/customers/${solicitud.partner_id}/contacts/create`, {
+                          method: "POST",
+                          company: true,
+                          body: { name: newSiteContactName.trim() },
+                        });
+                        const created = {
+                          id: result.id,
+                          name: result.name,
+                          type: "contact",
+                          email: "",
+                          phone: "",
+                        };
+                        setRelatedPartners((prev) => [...prev, created]);
+                        setEditData((prev: any) => ({
+                          ...prev,
+                          site_contact_id: result.id,
+                          site_contact: result.name,
+                          site_phone: "",
+                          site_email: "",
+                        }));
+                        setNewSiteContactName("");
+                      } catch (err: any) {
+                        toastError(err.message || "No se pudo crear el contacto");
+                      } finally {
+                        setCreatingSiteContact(false);
+                      }
+                    }}
+                  >
+                    {creatingSiteContact ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                    Agregar
+                  </button>
+                </div>
               </div>
 
               {/* Address Grid */}
@@ -1311,6 +1571,52 @@ export default function SolicitudDetallePage() {
               >
                 MANTENER SOLICITUD
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Mark Opportunity Lost Modal ─── */}
+      {showLostModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-100 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+          <div className="bg-base-200 rounded-3xl sm:rounded-[40px] p-6 sm:p-10 border border-base-content/10 max-w-xl w-full shadow-2xl relative overflow-y-auto max-h-[90vh]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-error" />
+            <div className="flex items-start justify-between gap-4 mb-8">
+              <div>
+                <h3 className="text-2xl font-black uppercase tracking-tight">Marcar como perdida</h3>
+                <p className="text-xs text-base-content/55 mt-2">La razón y el comentario son opcionales y sirven para documentar.</p>
+              </div>
+              <button onClick={() => setShowLostModal(false)} className="w-10 h-10 rounded-full bg-base-content/5 flex items-center justify-center" aria-label="Cerrar">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-base-content/50">Razón de pérdida (opcional)</label>
+                <select value={lostReasonId || ""} onChange={(e) => setLostReasonId(Number(e.target.value) || null)} className="select select-bordered bg-base-100 w-full rounded-xl">
+                  <option value="">Sin especificar</option>
+                  {lostReasons.map((reason) => <option key={reason.id} value={reason.id}>{reason.name}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-base-content/50">Subrazón (opcional)</label>
+                <select value={lostSubreasonId || ""} onChange={(e) => setLostSubreasonId(Number(e.target.value) || null)} disabled={!lostReasonId} className="select select-bordered bg-base-100 w-full rounded-xl disabled:opacity-50">
+                  <option value="">Sin especificar</option>
+                  {lostSubreasons.map((reason) => <option key={reason.id} value={reason.id}>{reason.name}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-base-content/50">Comentarios (opcional)</label>
+                <textarea value={lostFeedback} onChange={(e) => setLostFeedback(e.target.value)} rows={4} className="textarea textarea-bordered bg-base-100 w-full rounded-xl" placeholder="Agrega información para documentar la pérdida..." />
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+                <button onClick={() => setShowLostModal(false)} className="btn btn-ghost flex-1">Cancelar</button>
+                <button onClick={submitLost} disabled={markingLost} className="btn-cta-danger flex-1 rounded-xl py-3 flex items-center justify-center gap-2 disabled:opacity-50">
+                  {markingLost ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                  Confirmar oportunidad perdida
+                </button>
+              </div>
             </div>
           </div>
         </div>
