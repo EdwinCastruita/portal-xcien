@@ -874,7 +874,7 @@ export default function CotizacionPage() {
               </p>
               <div
                 ref={printRef}
-                className="bg-white text-black p-[2.5cm] shadow-2xl min-h-[29.7cm] min-w-[210mm] flex flex-col font-sans border-t-[14px] border-[#003a70] rounded-b-2xl"
+                className="print-area bg-white text-black p-[2.5cm] shadow-2xl min-h-[29.7cm] min-w-[210mm] flex flex-col font-sans border-t-[14px] border-[#003a70] rounded-b-2xl"
                 style={{ fontFamily: "'Comfortaa', sans-serif" }}
               >
               <div className="flex justify-between items-start mb-16 pb-12 border-b-2 border-slate-50">

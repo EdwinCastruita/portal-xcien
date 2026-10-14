@@ -184,6 +184,8 @@ export default function SolicitudDetallePage() {
   const [siteLoadError, setSiteLoadError] = useState("");
   const [states, setStates] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
+  // Ciudades del Estado elegido en el drawer "Editar Cliente" (QA v0.9.1 punto 2).
+  const [clientCities, setClientCities] = useState<any[]>([]);
   const [creatingSite, setCreatingSite] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -343,6 +345,20 @@ export default function SolicitudDetallePage() {
   }, [editData.site_state_id]);
 
   useEffect(() => {
+    if (!editData.client_state_id) {
+      setClientCities([]);
+      return;
+    }
+    apiFetch("/cities", {
+      method: "POST",
+      company: true,
+      body: { state_id: editData.client_state_id },
+    })
+      .then((res) => setClientCities(Array.isArray(res?.cities) ? res.cities : []))
+      .catch((err) => console.error("Error fetching cities", err));
+  }, [editData.client_state_id]);
+
+  useEffect(() => {
     const shouldSetup = searchParams?.get("setup") === "1";
     if (!shouldSetup || autoOpenedSetup || !solicitud) return;
 
@@ -390,13 +406,13 @@ export default function SolicitudDetallePage() {
     setEditData({});
   };
 
-  const saveEdit = async (): Promise<boolean> => {
+  const saveEdit = async (body: any = editData): Promise<boolean> => {
     setSaving(true);
     try {
       const res = await apiFetch(`/solicitudes/${id}/update`, {
         method: "POST",
         company: true,
-        body: editData,
+        body,
       });
       setSolicitud(flattenSolicitud(res.solicitud));
       setEditing(false);
@@ -423,6 +439,17 @@ export default function SolicitudDetallePage() {
     setShowOpportunityEditor(true);
   };
 
+  // El drawer de sitio parte de una copia completa de la solicitud; al
+  // guardar solo deben viajar los datos del sitio. Mandar también
+  // `business_name`/`rfc` hacía que Odoo reescribiera el Cliente y fallara
+  // por contacto duplicado (QA v0.9.1 punto 4).
+  const sitePayload = (data: any) =>
+    Object.fromEntries(
+      Object.entries(data).filter(
+        ([key]) => key.startsWith("site_") || key === "create_site" || key === "expected_closing",
+      ),
+    );
+
   const openContactDrawer = () => {
     setEditData({
       contact_name: solicitud.contact_name || "",
@@ -442,6 +469,9 @@ export default function SolicitudDetallePage() {
       street_number2: client.street_number2 || "",
       colony: client.colony || "",
       zip: client.zip || "",
+      client_email: client.email || "",
+      client_state_id: client.state_id || null,
+      client_city_id: client.city_id || null,
       regimen_societario_id: client.regimen_societario_id || null,
       company_type: client.company_type || "company",
     });
@@ -711,7 +741,7 @@ export default function SolicitudDetallePage() {
                 <X className="w-4 h-4" /> Cancelar
               </button>
               <button
-                onClick={saveEdit}
+                onClick={() => saveEdit()}
                 disabled={saving}
                 className="flex-1 md:flex-none btn-brand px-12 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-30"
               >
@@ -1141,6 +1171,11 @@ export default function SolicitudDetallePage() {
                 <input value={editData.rfc || ""} onChange={(e) => setEditData({ ...editData, rfc: e.target.value.toUpperCase() })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-mono uppercase focus:border-primary/50" />
               </div>
 
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Correo electrónico</label>
+                <input type="email" value={editData.client_email || ""} onChange={(e) => setEditData({ ...editData, client_email: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold focus:border-primary/50" />
+              </div>
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2 space-y-2">
                   <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Calle</label>
@@ -1161,6 +1196,29 @@ export default function SolicitudDetallePage() {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Código Postal</label>
                   <input value={editData.zip || ""} onChange={(e) => setEditData({ ...editData, zip: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Estado</label>
+                  <select
+                    value={editData.client_state_id || ""}
+                    onChange={(e) => setEditData({ ...editData, client_state_id: Number(e.target.value) || null, client_city_id: null })}
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50"
+                  >
+                    <option value="">Seleccionar estado</option>
+                    {states.map((state) => <option key={state.id} value={state.id}>{state.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Ciudad</label>
+                  <select
+                    value={editData.client_city_id || ""}
+                    disabled={!editData.client_state_id}
+                    onChange={(e) => setEditData({ ...editData, client_city_id: Number(e.target.value) || null })}
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50 disabled:opacity-50"
+                  >
+                    <option value="">Seleccionar ciudad</option>
+                    {clientCities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
+                  </select>
                 </div>
               </div>
 
@@ -1524,7 +1582,7 @@ export default function SolicitudDetallePage() {
 
               <button
                 onClick={async () => {
-                  const ok = await saveEdit();
+                  const ok = await saveEdit(sitePayload(editData));
                   if (ok) setShowSiteEditor(false);
                 }}
                 disabled={saving}

@@ -112,6 +112,12 @@ export default function NuevaSolicitudPage() {
   const [customerResults, setCustomerResults] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
   const [customerSearching, setCustomerSearching] = useState(false);
+  // Contactos hijo del cliente existente, para elegir uno en "Contacto
+  // Directo" en vez de crear siempre uno nuevo (QA v0.9.1 punto 3).
+  const [customerContacts, setCustomerContacts] = useState<
+    { id: number; name: string; email: string; phone: string }[]
+  >([]);
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
 
   const [products, setProducts] = useState<
     { id: number; name: string; price: number }[]
@@ -204,6 +210,24 @@ export default function NuevaSolicitudPage() {
     return () => clearTimeout(timer);
   }, [formData.business_name, formData.rfc]);
 
+  useEffect(() => {
+    setCustomerContacts([]);
+    setSelectedContactId(null);
+    if (!selectedCustomer?.id) return;
+    let active = true;
+    apiFetch(`/customers/${selectedCustomer.id}/contacts`, {
+      method: "POST",
+      company: true,
+    })
+      .then((res) => {
+        if (active) setCustomerContacts(Array.isArray(res?.contacts) ? res.contacts : []);
+      })
+      .catch((err) => console.error("Error fetching contacts", err));
+    return () => {
+      active = false;
+    };
+  }, [selectedCustomer?.id]);
+
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
@@ -217,6 +241,10 @@ export default function NuevaSolicitudPage() {
     }
     if (name === "rfc" || name === "business_name") {
       setSelectedCustomer(null);
+    }
+    // Editar el nombre a mano significa que es un contacto distinto.
+    if (name === "contact_name") {
+      setSelectedContactId(null);
     }
   };
 
@@ -243,12 +271,14 @@ export default function NuevaSolicitudPage() {
     if (currentStep === 2 && !formData.product_id) return;
     if (currentStep === 3) {
       if (
+        !formData.rfc.trim() ||
         !formData.business_name.trim() ||
         !formData.contact_name.trim() ||
         !formData.contact_email.trim() ||
         !formData.contact_phone.trim()
       ) {
         setErrors({
+          rfc: !formData.rfc.trim() ? "RFC es obligatorio" : "",
           business_name: !formData.business_name.trim()
             ? "Razón social es obligatoria"
             : "",
@@ -303,6 +333,7 @@ export default function NuevaSolicitudPage() {
         body: {
           partner_id: selectedCustomer.id,
           business_name: selectedCustomer.name,
+          contact_id: selectedContactId || undefined,
           product_id: formData.product_id || undefined,
           plan_speed: formData.plan_speed,
           plan_price: formData.plan_price,
@@ -669,16 +700,16 @@ export default function NuevaSolicitudPage() {
                   </div>
                   <div>
                     <FormInput
-                      label="RFC (OPCIONAL)"
+                      label="RFC"
                       name="rfc"
-                      placeholder="Captúralo si lo tienes disponible"
+                      placeholder="Ej: XAXX010101000"
                       icon={Search}
                       value={formData.rfc}
                       onChange={handleChange}
-                      required={false}
+                      error={errors.rfc}
                     />
                     <p className="mt-2 text-[10px] text-base-content/45 font-medium ml-1">
-                      Captura el RFC genérico si no tienes el RFC disponible (ej. XAXX010101000 para Persona Moral o XEXX010101000 para Persona Física), para no detener el proceso de venta.
+                      Captura el RFC genérico si no tienes el RFC disponible para no detener tu proceso de venta.
                     </p>
                   </div>
                   {formData.person_type === "moral" && (
@@ -745,6 +776,31 @@ export default function NuevaSolicitudPage() {
                     Contacto Directo
                   </h3>
                 </div>
+                {selectedCustomer && customerContacts.length > 0 && (
+                  <SmartSelector
+                    label="CONTACTO EXISTENTE"
+                    placeholder="Elegir un contacto del cliente..."
+                    options={customerContacts.map((c) => ({
+                      id: c.id,
+                      name: c.name,
+                      subtitle: [c.email, c.phone].filter(Boolean).join(" · "),
+                    }))}
+                    selectedId={selectedContactId}
+                    onSelect={(opt) => {
+                      const contact = customerContacts.find((c) => c.id === Number(opt?.id));
+                      setSelectedContactId(contact ? contact.id : null);
+                      if (contact) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          contact_name: contact.name || "",
+                          contact_email: contact.email || prev.contact_email,
+                          contact_phone: contact.phone || prev.contact_phone,
+                        }));
+                        setErrors((prev) => ({ ...prev, contact_name: "", contact_email: "", contact_phone: "" }));
+                      }
+                    }}
+                  />
+                )}
                 <FormInput
                   label="NOMBRE"
                   name="contact_name"
