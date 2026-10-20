@@ -66,6 +66,8 @@ export default function CotizacionPage() {
   const [saving, setSaving] = useState(false);
   const [quotation, setQuotation] = useState<any>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
+  // Mensaje del modal de carga mientras Odoo genera la cotización o un PDF.
+  const [busyMessage, setBusyMessage] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
 
   const [existingQuotations, setExistingQuotations] = useState<any[]>([]);
@@ -322,6 +324,7 @@ export default function CotizacionPage() {
     }
 
     setSaving(true);
+    setBusyMessage(editingId ? "Actualizando cotización…" : "Generando cotización…");
     try {
       const isEdit = !!editingId;
       const path = isEdit
@@ -359,6 +362,7 @@ export default function CotizacionPage() {
       toastError(err.message || "Error inesperado al generar la cotización");
     } finally {
       setSaving(false);
+      setBusyMessage(null);
     }
   };
 
@@ -473,10 +477,10 @@ export default function CotizacionPage() {
     }
   };
 
-  const printContract = async () => {
-    if (!currentOrderId) return;
+  // Abre en una pestaña nueva un PDF generado por un reporte de Odoo.
+  const openOdooPdf = async (path: string, fallbackMsg: string) => {
     try {
-      const url = new URL(`${API_BASE}/quotations/${currentOrderId}/contract/print`, window.location.origin);
+      const url = new URL(`${API_BASE}${path}`, window.location.origin);
       const session = getCookie(SESSION_COOKIE);
       if (session) url.searchParams.set("_sid", session);
       const cid = getCookie("company_id");
@@ -489,16 +493,44 @@ export default function CotizacionPage() {
       // "La respuesta no contiene un PDF de contrato" (QA v0.9 punto 10).
       if (!res.ok || !contentType.includes("application/pdf")) {
         const data = await res.clone().json().catch(() => null);
-        throw new Error(data?.message || "No se pudo generar el contrato");
+        throw new Error(data?.message || fallbackMsg);
       }
       const blob = await res.blob();
       const fileUrl = URL.createObjectURL(blob);
       window.open(fileUrl, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
     } catch (err: any) {
-      toastError(err.message || "Error al imprimir el contrato");
+      toastError(err.message || fallbackMsg);
     }
   };
+
+  const printWithModal = async (
+    path: string,
+    fallbackMsg: string,
+    message: string,
+  ) => {
+    if (!currentOrderId || busyMessage) return;
+    setBusyMessage(message);
+    try {
+      await openOdooPdf(path, fallbackMsg);
+    } finally {
+      setBusyMessage(null);
+    }
+  };
+
+  const printContract = () =>
+    printWithModal(
+      `/quotations/${currentOrderId}/contract/print`,
+      "No se pudo generar el contrato",
+      "Generando contrato…",
+    );
+
+  const printQuotation = () =>
+    printWithModal(
+      `/quotations/${currentOrderId}/print`,
+      "No se pudo generar la cotización",
+      "Generando PDF de la cotización…",
+    );
 
   if (loading)
     return (
@@ -581,13 +613,15 @@ export default function CotizacionPage() {
                 {emailSent ? "Enviado con Éxito" : "Enviar por Correo"}
               </button>
               <button
-                onClick={() => window.print()}
+                onClick={printQuotation}
+                disabled={!!busyMessage}
                 className="btn btn-primary flex-1 lg:flex-none h-14 px-6 sm:px-10 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20"
               >
                 <Printer className="w-4 h-4 mr-2 shrink-0" /> Imprimir PDF
               </button>
               <button
                 onClick={printContract}
+                disabled={!!busyMessage}
                 className="btn btn-ghost flex-1 lg:flex-none h-14 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest"
               >
                 <FileSignature className="w-4 h-4 mr-2" /> Imprimir contrato
@@ -1374,6 +1408,27 @@ export default function CotizacionPage() {
           </div>
         </div>
       </div>
+
+      {/* ─── Modal de carga (generación de cotización / PDFs de Odoo) ─── */}
+      {busyMessage && (
+        <div
+          aria-live="polite"
+          aria-busy="true"
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-100 flex items-center justify-center p-6 animate-fade-in"
+        >
+          <div className="bg-base-200 rounded-[40px] p-8 sm:p-12 border border-base-content/10 max-w-md w-full shadow-2xl animate-slide-in-up relative overflow-hidden flex flex-col items-center text-center">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
+            <Loader2 className="w-14 h-14 animate-spin text-primary mb-6" />
+            <h3 className="text-lg sm:text-xl font-black uppercase tracking-widest leading-tight mb-3">
+              {busyMessage}
+            </h3>
+            <p className="text-base-content/55 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
+              Odoo está generando el documento, esto puede tardar unos
+              segundos.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
