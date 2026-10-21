@@ -21,7 +21,7 @@ export default function StageStepper({ steps }: { steps: Step[] }) {
   return (
     <div className="w-full">
       {/* Eyebrow: makes the pipeline legible as a pipeline, not just icons */}
-      <div className="flex items-center justify-between mb-6 gap-4">
+      <div className="flex flex-wrap items-center justify-between mb-5 md:mb-6 gap-x-4 gap-y-1">
         <p className="text-[10px] font-black text-base-content/45 uppercase tracking-[0.3em]">
           Pipeline de la oportunidad
         </p>
@@ -30,17 +30,19 @@ export default function StageStepper({ steps }: { steps: Step[] }) {
         </p>
       </div>
 
-      <div className="w-full overflow-x-auto pb-2">
+      {/* En pantallas angostas el pipeline se desliza en horizontal con
+          snap por etapa, para que nunca quede una etapa cortada a la mitad. */}
+      <div className="w-full overflow-x-auto pb-2 snap-x snap-mandatory custom-scrollbar">
         <div className="flex items-start min-w-max gap-0 px-1">
           {steps.map((s, i) => {
             const done = s.status === "completed";
             const now = s.status === "current";
             const last = i === steps.length - 1;
             return (
-              <div key={i} className="flex items-start">
-                <div className="flex flex-col items-center gap-2.5 w-32">
+              <div key={i} className="flex items-start snap-start">
+                <div className="flex flex-col items-center gap-2.5 w-24 sm:w-28 xl:w-32">
                   <div
-                    className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all shrink-0 ${
+                    className={`w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center border-2 transition-all shrink-0 ${
                       done
                         ? "bg-primary border-primary text-primary-content shadow-[0_0_0_4px_var(--color-primary-glow,transparent)]"
                         : now
@@ -68,7 +70,7 @@ export default function StageStepper({ steps }: { steps: Step[] }) {
                 </div>
                 {!last && (
                   <div
-                    className={`h-[3px] w-10 md:w-16 mt-[22px] rounded-full shrink-0 transition-colors ${
+                    className={`h-[3px] w-6 sm:w-10 lg:w-12 xl:w-16 mt-5 md:mt-[22px] rounded-full shrink-0 transition-colors ${
                       done ? "bg-primary" : "bg-base-content/10"
                     }`}
                   />

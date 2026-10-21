@@ -147,7 +147,23 @@ El módulo Odoo está fuera de este repo, en `../wispi/wispi_portal_api/` (contr
   - Otras: `.card-premium`, `.avatar-chip`, `.custom-scrollbar`, `.skeleton-shimmer`, `.stripe-brand-3`, `.animate-slide-in-up`, `.animate-slide-in-right`.
 - Tipografía: Geist para texto, Space Grotesk (`--font-display`) aplicada globalmente a `h1`–`h4`. Etiquetas y botones usan mayúsculas con `font-black` y `tracking` amplio.
 - El scroll vive en el contenedor de contenido de `(dashboard)/layout.tsx`, no en `window`; tenlo en cuenta para `sticky` y para listeners de scroll.
-- La UI es responsive con sidebar móvil (`MobileSidebarContext`); revisa los cambios en ancho de teléfono.
+- **Breakpoints** (definidos en el bloque `@theme` de `globals.css`, mobile-first):
+
+  | Nombre | Desde | Prefijo |
+  | --- | --- | --- |
+  | xs | < 576px | sin prefijo (o `max-sm:` para solo ese rango) |
+  | sm | 576px | `sm:` |
+  | md | 768px | `md:` |
+  | lg | 992px | `lg:` |
+  | xl | 1200px | `xl:` |
+  | xxl | 1400px | `xxl:` (no existe `2xl:`) |
+
+- El sidebar es drawer (con `MobileSidebarContext`) por debajo de `lg` y fijo de 256px desde `lg`. Por eso los layouts de 2–3 columnas con panel lateral (detalle, cotización) se activan en `xl:`, no en `lg:`.
+- Grids de tarjetas: `grid-cols-1 sm:grid-cols-2 xl:grid-cols-3`. Botones de acción: a todo el ancho en xs (`w-full sm:w-auto`); la jerarquía `.btn-brand`/`.btn-cta-*` ya trae alto táctil mínimo de 44px.
+- Ventanas: usa `.overlay-backdrop` + `.modal-sheet` (bottom-sheet en xs, diálogo centrado desde `sm`) o `.overlay-backdrop.overlay-drawer` + `.drawer-panel` (panel lateral; ajusta el ancho con `md:max-w-*`).
+- Usa `dvh` en lugar de `vh`/`h-screen` para alturas de pantalla completa.
+- En xs los campos de texto se fuerzan a 16px (evita el zoom de iOS); no lo compenses con clases.
+- Revisa los cambios al menos en 375, 576, 768, 992, 1200 y 1400px.
 
 ## Git
 

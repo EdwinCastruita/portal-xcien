@@ -11,6 +11,8 @@ interface Props {
   highlight?: boolean;
   disabled?: boolean;
   href?: string;
+  /** Clases extra para la celda del grid (p. ej. `col-span`). */
+  className?: string;
 }
 
 export default function ActionCard({
@@ -20,10 +22,11 @@ export default function ActionCard({
   highlight,
   disabled,
   href,
+  className = "",
 }: Props) {
   const content = (
     <div
-      className={`relative rounded-3xl p-6 transition-all duration-500 h-40 overflow-hidden group
+      className={`relative rounded-3xl p-5 md:p-6 transition-all duration-500 h-28 sm:h-36 xl:h-40 overflow-hidden group ${href && !disabled ? "" : className}
         ${
           disabled
             ? "bg-base-content/[0.02] border border-dashed border-base-content/10 cursor-not-allowed"
@@ -44,12 +47,12 @@ export default function ActionCard({
       )}
 
       {/* Content Container */}
-      <div className="relative z-10 h-full flex items-center gap-5">
+      <div className="relative z-10 h-full flex items-center gap-4 md:gap-5">
         {/* Icon — sin caja: el color y el tamaño hacen el trabajo que antes
             hacía el tile redondeado. */}
         <Icon
           strokeWidth={1.75}
-          className={`w-8 h-8 shrink-0 transition-all duration-500 ${!disabled && "group-hover:scale-110"}
+          className={`w-7 h-7 md:w-8 md:h-8 shrink-0 transition-all duration-500 ${!disabled && "group-hover:scale-110"}
             ${
               disabled
                 ? "text-base-content/25"
@@ -62,7 +65,7 @@ export default function ActionCard({
         {/* Typography */}
         <div className="flex-1 min-w-0">
           <h3
-            className={`text-lg font-black tracking-tighter mb-1 truncate transition-colors duration-500
+            className={`text-base md:text-lg font-black tracking-tighter mb-1 truncate transition-colors duration-500
               ${
                 disabled
                   ? "text-base-content/30"
@@ -74,7 +77,7 @@ export default function ActionCard({
             {title}
           </h3>
           <p
-            className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-500
+            className={`text-[10px] font-bold uppercase tracking-wider md:tracking-widest truncate transition-colors duration-500
               ${
                 disabled
                   ? "text-base-content/25"
@@ -100,7 +103,7 @@ export default function ActionCard({
           />
         )}
         {disabled && (
-          <span className="text-[9px] font-black uppercase tracking-widest text-base-content/25 border border-base-content/10 rounded-full px-3 py-1.5 shrink-0">
+          <span className="text-[9px] font-black uppercase tracking-widest text-base-content/25 border border-base-content/10 rounded-full px-2.5 sm:px-3 py-1.5 shrink-0">
             Próximamente
           </span>
         )}
@@ -108,6 +111,11 @@ export default function ActionCard({
     </div>
   );
 
-  if (href && !disabled) return <Link href={href}>{content}</Link>;
+  if (href && !disabled)
+    return (
+      <Link href={href} className={`block ${className}`}>
+        {content}
+      </Link>
+    );
   return content;
 }

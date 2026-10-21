@@ -7,7 +7,7 @@ import { MobileSidebarProvider } from "../components/ui/MobileSidebarContext";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <MobileSidebarProvider>
-      <div className="h-screen bg-base-100 text-base-content overflow-hidden relative">
+      <div className="h-dvh bg-base-100 text-base-content overflow-hidden relative">
         {/* Ambient shell glow — fixed, so it doesn't move or repeat with scroll.
             Lives once here instead of every page re-inventing its own blur. */}
         <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
@@ -20,9 +20,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Content area — this is the ONE scrolling region, so `sticky`
               inside it (topbar, sidebar) has a real scroll container to
               stick against instead of the window. */}
-          <div className="flex-1 flex flex-col h-screen overflow-y-auto overflow-x-hidden">
+          <div className="flex-1 min-w-0 flex flex-col h-dvh overflow-y-auto overflow-x-hidden">
             {/* Compact TopBar for all pages */}
-            <div className="relative h-20 px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-3 bg-base-100/60 backdrop-blur-md sticky top-0 z-40 shrink-0">
+            <div className="relative h-16 md:h-20 px-4 sm:px-5 md:px-6 lg:px-8 xl:px-10 flex items-center justify-between gap-3 bg-base-100/60 backdrop-blur-md sticky top-0 z-40 shrink-0">
                <div className="flex items-center gap-3 min-w-0">
                  <MobileMenuButton />
                  <TopBarTitle />
@@ -30,7 +30,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                <NotificationBell />
                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-primary/40 via-base-content/10 to-transparent" />
             </div>
-            <main className="flex-1 p-4 sm:p-6 lg:p-10">{children}</main>
+            {/* `max-w-[1600px]` evita que en pantallas xxl el contenido se estire
+                hasta líneas ilegibles; cada página sigue poniendo su propio
+                `max-w-*` interno. */}
+            <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-5 md:p-6 lg:p-8 xl:p-10">{children}</main>
           </div>
         </div>
       </div>

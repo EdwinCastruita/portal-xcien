@@ -2,6 +2,24 @@
 @import "tw-animate-css";
 @plugin "daisyui";
 
+/* ── Breakpoints ──
+   Escala tipo Bootstrap, mobile-first. `xs` (< 576px) son los estilos base
+   sin prefijo; para apuntar solo a un rango usa `max-*` (p. ej. `max-sm:`).
+     sm  ≥ 576px   móviles grandes
+     md  ≥ 768px   tablets
+     lg  ≥ 992px   laptops (aquí aparece el sidebar fijo)
+     xl  ≥ 1200px  monitores grandes
+     xxl ≥ 1400px  pantallas extra grandes */
+@theme {
+  /* Se anula `2xl` (1536px) de Tailwind; la escala termina en `xxl`. */
+  --breakpoint-2xl: initial;
+  --breakpoint-sm: 36rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 62rem;
+  --breakpoint-xl: 75rem;
+  --breakpoint-xxl: 87.5rem;
+}
+
 
 
 @plugin "daisyui/theme" {
@@ -415,6 +433,20 @@
 }
 .btn-cta-danger:active { transform: translateY(0); }
 
+/* Base táctil compartida por la jerarquía de CTA. Va dentro de
+   `@layer components` a propósito: así las utilidades (`hidden`, `flex`,
+   `w-full`, `min-h-*`…) siguen pudiendo sobreescribirla, cosa que no
+   ocurriría si viviera fuera de una layer como el resto de estas clases.
+   44px es el mínimo recomendado para un objetivo táctil. */
+@layer components {
+  .btn-brand,
+  .btn-cta-secondary,
+  .btn-cta-tertiary,
+  .btn-cta-danger {
+    min-height: 2.75rem;
+  }
+}
+
 /* A "selected chip" — for nav active states, segmented filters, tabs.
    Deliberately NOT a solid fill: .btn-brand is the only thing on a
    screen that gets full-strength color, so selection state elsewhere
@@ -451,8 +483,11 @@
    "alive" on a near-black theme. */
 .card-premium {
   @apply relative bg-base-200 border border-base-content/10;
-  border-radius: 1.5rem;
+  border-radius: 1.25rem;
   transition: border-color 0.35s cubic-bezier(0.16,1,0.3,1), background-color 0.35s cubic-bezier(0.16,1,0.3,1), transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+@media (width >= 48rem) {
+  .card-premium { border-radius: 1.5rem; }
 }
 .card-premium::before {
   content: "";
@@ -513,6 +548,42 @@
 .stripe-brand-3 span:nth-child(1) { width: 2px; @apply bg-primary; }
 .stripe-brand-3 span:nth-child(2) { width: 2px; @apply bg-primary opacity-50; }
 .stripe-brand-3 span:nth-child(3) { width: 2px; @apply bg-primary opacity-25; }
+
+/* iOS hace zoom automático al enfocar un campo con fuente < 16px, lo que
+   descuadra el layout en móvil. En xs forzamos 16px en los campos de texto;
+   va fuera de cualquier layer a propósito para ganarle a `text-sm`/`text-xs`. */
+@media (width < 36rem) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* ── Ventanas: modales y drawers ──
+   `.overlay-backdrop` es el fondo a pantalla completa. Dentro va:
+   - `.modal-sheet`: en xs se ancla abajo como bottom-sheet (más fácil de
+     alcanzar con el pulgar); desde `sm` se centra como diálogo.
+   - `.drawer-panel`: panel lateral derecho, a todo el ancho en móvil y con
+     ancho máximo por breakpoint (se ajusta con `max-w-*` en cada uso).
+   Usan `dvh` en vez de `vh`/`screen` para no quedar tapados por la barra
+   de URL dinámica de los navegadores móviles. */
+@layer components {
+  .overlay-backdrop {
+    @apply fixed inset-0 z-100 flex items-end justify-center bg-black/80 backdrop-blur-md sm:items-center sm:p-6;
+  }
+  .overlay-backdrop.overlay-drawer {
+    @apply items-stretch justify-end p-0 sm:items-stretch sm:p-0;
+  }
+  .modal-sheet {
+    @apply relative w-full max-h-[92dvh] overflow-y-auto overscroll-contain bg-base-200 border border-base-content/10 shadow-2xl rounded-t-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:rounded-[2rem] sm:p-8 md:p-10;
+    animation: slide-in-up 0.5s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  .drawer-panel {
+    @apply relative w-full h-dvh overflow-y-auto overscroll-contain bg-base-300 border-l border-base-content/10 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-8 lg:p-12;
+    box-shadow: 0 0 150px oklch(0% 0 0 / 70%);
+  }
+}
 
 /* ── Impresión ──
    Una vista marca con `.print-area` el documento a imprimir (p.ej. la hoja

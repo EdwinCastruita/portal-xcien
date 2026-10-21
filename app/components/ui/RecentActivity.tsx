@@ -30,7 +30,7 @@ export default function RecentActivity() {
   if (loading) {
     return (
       <div className="animate-slide-in-up">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6 md:mb-8">
           <div className="flex items-center gap-4">
             <div className="flex flex-col gap-1.5">
               <div className="h-0.5 w-6 bg-primary rounded-full" />
@@ -42,7 +42,7 @@ export default function RecentActivity() {
             </h2>
           </div>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -59,7 +59,7 @@ export default function RecentActivity() {
   /* ─ Error State ─ */
   if (errorMsg) {
     return (
-      <div className="bg-error/5 border border-error/10 rounded-2xl p-10 text-center animate-slide-in-up">
+      <div className="bg-error/5 border border-error/10 rounded-2xl p-6 sm:p-10 text-center animate-slide-in-up">
         <p className="text-error font-black uppercase tracking-widest text-xs mb-2">
           Error de Sincronización
         </p>
@@ -77,7 +77,7 @@ export default function RecentActivity() {
   return (
     <div className="animate-slide-in-up">
       {/* Section header */}
-      <div className="flex justify-between items-end mb-8 gap-4">
+      <div className="flex justify-between items-end mb-6 md:mb-8 gap-4">
         <div className="flex items-center gap-4">
           <div className="flex flex-col gap-1.5">
             <div className="h-0.5 w-6 bg-primary rounded-full" />
@@ -88,7 +88,7 @@ export default function RecentActivity() {
             <p className="text-[10px] font-black text-base-content/45 uppercase tracking-[0.3em] mb-1 leading-none">
               Timeline
             </p>
-            <h2 className="text-2xl font-black text-base-content uppercase tracking-tight leading-none">
+            <h2 className="text-xl sm:text-2xl font-black text-base-content uppercase tracking-tight leading-none">
               Actividad Reciente
             </h2>
           </div>
@@ -96,7 +96,7 @@ export default function RecentActivity() {
 
         <Link
           href="/solicitudes"
-          className="group flex items-center gap-2 text-[10px] font-black text-base-content/55 hover:text-primary uppercase tracking-widest transition-all duration-300"
+          className="group flex items-center gap-2 min-h-11 shrink-0 text-[10px] font-black text-base-content/55 hover:text-primary uppercase tracking-widest transition-all duration-300"
         >
           Ver Todo
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -104,7 +104,7 @@ export default function RecentActivity() {
       </div>
 
       {solicitudes.length === 0 ? (
-        <div className="bg-base-200 border border-base-content/5 rounded-3xl p-12 text-center border-dashed group hover:border-base-content/10 transition-colors duration-500">
+        <div className="bg-base-200 border border-base-content/5 rounded-3xl p-6 sm:p-10 md:p-12 text-center border-dashed group hover:border-base-content/10 transition-colors duration-500">
           <Plus
             strokeWidth={1.5}
             className="w-10 h-10 text-base-content/30 group-hover:text-primary group-hover:scale-110 transition-all duration-500 mx-auto mb-5"
@@ -117,13 +117,13 @@ export default function RecentActivity() {
           </p>
           <Link
             href="/solicitud/nueva"
-            className="btn-brand px-10 py-4 rounded-xl text-xs font-black uppercase tracking-widest inline-flex items-center gap-2 group-hover:shadow-[0_0_20px_var(--color-primary-glow)] transition-all"
+            className="btn-brand w-full sm:w-auto justify-center px-8 sm:px-10 py-4 rounded-xl text-xs font-black uppercase tracking-widest inline-flex items-center gap-2 group-hover:shadow-[0_0_20px_var(--color-primary-glow)] transition-all"
           >
             <Plus className="w-4 h-4" /> Nueva Solicitud
           </Link>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           {solicitudes.slice(0, 6).map((sol) => (
             <ActivityCard
               key={sol.lead_id}
@@ -142,7 +142,7 @@ export default function RecentActivity() {
           ))}
           {solicitudes.length < 6 && (
             <Link href="/solicitud/nueva" className="block group">
-              <div className="h-full min-h-[176px] rounded-[1.5rem] border-2 border-dashed border-base-content/10 hover:border-primary/40 flex flex-col items-center justify-center gap-3 p-7 transition-all duration-300 hover:bg-primary/[0.03]">
+              <div className="h-full min-h-[176px] rounded-[1.5rem] border-2 border-dashed border-base-content/10 hover:border-primary/40 flex flex-col items-center justify-center gap-3 p-6 md:p-7 transition-all duration-300 hover:bg-primary/[0.03]">
                 <Plus
                   strokeWidth={1.5}
                   className="w-8 h-8 text-base-content/30 group-hover:text-primary group-hover:scale-110 transition-all"

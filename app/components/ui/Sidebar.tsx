@@ -63,7 +63,7 @@ export default function Sidebar() {
           afuera de cualquier drawer estándar). */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden animate-fade-in"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden animate-fade-in"
           onClick={close}
           aria-hidden="true"
         />
@@ -73,12 +73,12 @@ export default function Sidebar() {
           spans the full window height regardless of sibling content height,
           scroll position, or flex quirks.
           En mobile vive fuera de pantalla (-translate-x-full) hasta que
-          `isOpen` lo desliza a la vista; en `md:` y superior siempre está
+          `isOpen` lo desliza a la vista; en `lg:` (992px) y superior siempre está
           visible como antes. */}
       <aside
-        className={`fixed left-0 top-0 h-screen w-64 flex flex-col py-8 px-4 shrink-0 border-r border-primary/10 overflow-y-auto custom-scrollbar z-[60] transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 h-dvh w-[min(18rem,85vw)] lg:w-64 flex flex-col py-6 lg:py-8 px-4 shrink-0 border-r border-primary/10 overflow-y-auto custom-scrollbar z-[60] transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0`}
+        } lg:translate-x-0`}
         style={{
           background:
             "linear-gradient(180deg, var(--color-base-200) 0%, var(--color-base-200) 60%, var(--color-base-300) 100%)",
@@ -90,11 +90,11 @@ export default function Sidebar() {
 
         {/* Botón de cerrar — solo mobile, ya que en desktop el panel nunca
             se oculta y no tiene sentido un botón de cierre. */}
-        <div className="relative flex justify-end mb-4 md:hidden">
+        <div className="relative flex justify-end mb-2 lg:hidden">
           <button
             onClick={close}
             aria-label="Cerrar menú de navegación"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-base-content/60 hover:text-base-content hover:bg-base-content/10 transition-all"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-base-content/60 hover:text-base-content hover:bg-base-content/10 transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -107,7 +107,7 @@ export default function Sidebar() {
             el nombre de la compañía es largo (antes competía por ancho con
             el logo al estar lado a lado). */}
         <div
-          className="relative px-3 mb-10 flex flex-col gap-4 group cursor-pointer"
+          className="relative px-3 mb-8 lg:mb-10 flex flex-col gap-4 group cursor-pointer"
           onClick={() => router.push("/dashboard")}
         >
           <h1 className="text-lg font-bold tracking-tight text-base-content leading-tight">
@@ -116,7 +116,7 @@ export default function Sidebar() {
           <div
             className={`rounded-2xl flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-[1.02] ${
               showLogo
-                ? "w-full h-28 bg-white p-4 shadow-md border border-black/5"
+                ? "w-full h-24 lg:h-28 bg-white p-4 shadow-md border border-black/5"
                 : "w-14 h-14 bg-primary shadow-[0_8px_20px_-6px_var(--brand-accent-glow)]"
             }`}
           >
@@ -227,9 +227,9 @@ export default function Sidebar() {
       </aside>
 
       {/* Spacer so the fixed sidebar doesn't overlap flow content — solo
-          reserva espacio en `md:` y superior; en mobile el panel vive fuera
+          reserva espacio en `lg:` y superior; en mobile el panel vive fuera
           de pantalla y no debe robarle ancho al contenido. */}
-      <div className="hidden md:block w-64 shrink-0" aria-hidden="true" />
+      <div className="hidden lg:block w-64 shrink-0" aria-hidden="true" />
     </>
   );
 }

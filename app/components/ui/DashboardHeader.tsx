@@ -58,7 +58,7 @@ export default function DashboardHeader() {
     .toUpperCase();
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-8 animate-fade-in relative">
+    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 md:mb-10 gap-6 lg:gap-8 animate-fade-in relative">
       {/* Dynamic Background Blur */}
       <div className="absolute -left-20 -top-20 w-64 h-64 bg-primary/5 blur-[100px] rounded-full pointer-events-none" />
 
@@ -67,7 +67,7 @@ export default function DashboardHeader() {
         <p className="text-xs font-bold text-primary tracking-widest uppercase">
           ¡{getGreeting()}, {firstName}!
         </p>
-        <h1 className="text-4xl md:text-5xl font-black text-base-content tracking-tighter leading-none">
+        <h1 className="text-3xl sm:text-4xl xl:text-5xl font-black text-base-content tracking-tighter leading-none">
           PANEL DE CONTROL
         </h1>
         {user?.company_name && (
@@ -82,17 +82,19 @@ export default function DashboardHeader() {
       </div>
 
       {/* ── Right: User Controls Area ── */}
-      <div className="flex items-center gap-3 w-full md:w-auto">
+      <div className="flex items-center gap-2 sm:gap-3 w-full lg:w-auto">
         {/* Theme Selector — secondary weight, doesn't compete with user profile */}
         <div className="dropdown dropdown-end">
           <label
             tabIndex={0}
-            className="btn btn-ghost bg-transparent border border-base-content/10 rounded-2xl h-14 px-5 flex items-center gap-2.5 text-base-content/50 hover:text-base-content hover:bg-base-200"
+            className="btn btn-ghost bg-transparent border border-base-content/10 rounded-2xl h-12 md:h-14 px-4 md:px-5 flex items-center gap-2.5 text-base-content/50 hover:text-base-content hover:bg-base-200"
           >
             <LayoutGrid className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">
+            {/* En xs solo icono + muestra de color para que el perfil quepa al lado. */}
+            <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">
               Tema de colores
             </span>
+            <span className="sr-only sm:hidden">Tema de colores</span>
             <span
               data-theme={theme}
               className="w-3 h-3 rounded-full bg-primary border border-base-content/20 shrink-0"
@@ -107,7 +109,7 @@ export default function DashboardHeader() {
               vez de eso empuja todo el header hacia la derecha al abrirse. */}
           <div
             tabIndex={0}
-            className="dropdown-content !absolute z-30 card-premium elevate-3 p-3 w-64 mt-2"
+            className="dropdown-content !absolute left-0 sm:left-auto z-30 card-premium elevate-3 p-3 w-[calc(100vw-2rem)] max-w-64 sm:w-64 mt-2"
           >
             <p className="text-[9px] font-black text-base-content/45 uppercase tracking-[0.25em] px-2 pt-1 pb-2">
               Tema visual
@@ -145,16 +147,16 @@ export default function DashboardHeader() {
         </div>
 
         {/* User Profile */}
-        <div className="flex items-center gap-4 bg-base-200 border border-base-content/5 rounded-2xl px-5 py-2.5 elevate-1">
-          <div className="text-right hidden sm:block">
-            <p className="text-[11px] font-black text-base-content uppercase tracking-widest mb-0.5">
+        <div className="flex items-center gap-3 md:gap-4 ml-auto lg:ml-0 min-w-0 bg-base-200 border border-base-content/5 rounded-2xl px-3 sm:px-5 py-1.5 md:py-2.5 elevate-1">
+          <div className="text-right min-w-0 hidden sm:block">
+            <p className="text-[11px] font-black text-base-content uppercase tracking-widest mb-0.5 truncate max-w-[14rem]">
               {displayName}
             </p>
             <p className="text-[9px] text-base-content/55 font-bold uppercase tracking-widest">
               Socio Comercial
             </p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-[10px] font-black text-primary-content shadow-lg shadow-primary/20">
+          <div className="w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-xl bg-primary flex items-center justify-center text-[10px] font-black text-primary-content shadow-lg shadow-primary/20">
             {initials || <UserIcon className="w-5 h-5" />}
           </div>
         </div>

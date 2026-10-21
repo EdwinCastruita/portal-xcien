@@ -27,12 +27,13 @@ export default function TopBarTitle() {
   const label = route?.label ?? "Portal";
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
       <Icon className="w-5 h-5 text-primary shrink-0" strokeWidth={2} />
-      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
-        <span className="text-base-content/35">Portal</span>
-        <span className="text-base-content/20">/</span>
-        <span className="text-base-content">{label}</span>
+      <div className="flex items-center gap-2 min-w-0 text-[10px] sm:text-[11px] font-black uppercase tracking-wider sm:tracking-widest">
+        {/* En xs solo cabe la sección actual; el prefijo "Portal /" aparece desde sm. */}
+        <span className="hidden sm:inline text-base-content/35">Portal</span>
+        <span className="hidden sm:inline text-base-content/20">/</span>
+        <span className="text-base-content truncate">{label}</span>
       </div>
     </div>
   );

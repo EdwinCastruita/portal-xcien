@@ -71,20 +71,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-base-100 overflow-hidden px-4 py-10">
+    <div className="relative min-h-dvh flex items-center justify-center bg-base-100 overflow-hidden px-4 py-8 sm:py-10">
       {/* Fondo animado + glows de marca */}
       <div className="absolute inset-0 opacity-40">
         <AnimatedLinesBackground />
       </div>
       <div
-        className="absolute -top-40 -right-40 w-[600px] h-[600px] pointer-events-none rounded-full"
+        className="absolute -top-40 -right-40 w-[min(600px,140vw)] h-[min(600px,140vw)] pointer-events-none rounded-full"
         style={{
           background:
             "radial-gradient(circle, color-mix(in oklch, var(--color-primary) 12%, transparent) 0%, transparent 60%)",
         }}
       />
       <div
-        className="absolute -bottom-52 -left-40 w-[560px] h-[560px] pointer-events-none rounded-full"
+        className="absolute -bottom-52 -left-40 w-[min(560px,130vw)] h-[min(560px,130vw)] pointer-events-none rounded-full"
         style={{
           background:
             "radial-gradient(circle, color-mix(in oklch, var(--color-primary) 7%, transparent) 0%, transparent 60%)",
@@ -92,14 +92,14 @@ export default function LoginPage() {
       />
 
       {/* Tarjeta */}
-      <div className="relative z-10 w-full max-w-[440px] animate-slide-in-up">
-        <div className="rounded-[28px] border border-base-content/[0.08] bg-base-200/90 backdrop-blur-xl shadow-[0_40px_120px_oklch(0%_0_0_/_45%)] overflow-hidden">
+      <div className="relative z-10 w-full sm:max-w-[440px] md:max-w-[460px] animate-slide-in-up">
+        <div className="rounded-3xl sm:rounded-[28px] border border-base-content/[0.08] bg-base-200/90 backdrop-blur-xl shadow-[0_40px_120px_oklch(0%_0_0_/_45%)] overflow-hidden">
           {/* Barra superior — color de marca (tracks el tema activo) */}
           <div className="h-1 w-full bg-gradient-to-r from-primary via-primary to-primary/20" />
 
-          <div className="p-9 sm:p-11">
+          <div className="p-6 sm:p-9 md:p-11">
             {/* Marca */}
-            <div className="flex items-center gap-3 mb-9">
+            <div className="flex items-center gap-3 mb-7 sm:mb-9">
               <div className="relative">
                 <Image
                   src="/wispi-logo.png"
@@ -116,20 +116,20 @@ export default function LoginPage() {
                 <div className="w-[3px] rounded-sm bg-primary/20" />
               </div>
               <div className="leading-tight">
-                <p className="text-base-content font-black tracking-[0.18em] text-sm">
+                <p className="text-base-content font-black tracking-[0.12em] sm:tracking-[0.18em] text-sm">
                   WISPI · XCIEN
                 </p>
-                <p className="text-primary text-[9px] font-black tracking-[0.32em] uppercase">
+                <p className="text-primary text-[9px] font-black tracking-[0.2em] sm:tracking-[0.32em] uppercase">
                   Portal de Vendedores
                 </p>
               </div>
             </div>
 
             {/* Título */}
-            <h1 className="text-3xl font-black text-base-content tracking-tight mb-1.5">
+            <h1 className="text-2xl sm:text-3xl font-black text-base-content tracking-tight mb-1.5">
               Iniciar sesión
             </h1>
-            <p className="text-base-content/65 text-sm mb-8">
+            <p className="text-base-content/65 text-sm mb-6 sm:mb-8">
               Ingresa con tu cuenta de Odoo para gestionar tus oportunidades.
             </p>
 
@@ -187,7 +187,7 @@ export default function LoginPage() {
                     aria-label={
                       showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
                     }
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content/75 transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-xl text-base-content/40 hover:text-base-content/75 transition-colors"
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />

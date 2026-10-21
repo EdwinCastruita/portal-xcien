@@ -170,14 +170,14 @@ export default function SolicitudesPage() {
 
   if (loading && !refreshing) {
     return (
-      <div className="max-w-7xl mx-auto py-20 px-4 space-y-12">
+      <div className="max-w-7xl mx-auto py-4 md:py-8 xl:py-12 space-y-8 md:space-y-12">
         <div className="flex flex-col gap-4 animate-pulse">
-          <div className="h-10 w-64 bg-base-200 rounded-2xl" />
+          <div className="h-10 w-full max-w-64 bg-base-200 rounded-2xl" />
           <div className="h-4 w-48 bg-base-200 rounded-xl" />
         </div>
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-64 bg-base-200 rounded-[2rem]" />
+            <div key={i} className="h-56 md:h-64 bg-base-200 rounded-[1.5rem] md:rounded-[2rem]" />
           ))}
         </div>
       </div>
@@ -185,17 +185,17 @@ export default function SolicitudesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 space-y-10 animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto py-2 md:py-6 xl:py-10 space-y-6 md:space-y-10 animate-in fade-in duration-700">
       {/* ── Page Header ── */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
-        <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 lg:gap-10">
+        <div className="space-y-3 md:space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <p className="text-[10px] font-black text-primary uppercase tracking-[0.25em]">
               Gestión de Oportunidades
             </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-base-content tracking-tighter">
+          <h1 className="text-3xl sm:text-4xl xl:text-5xl font-black text-base-content tracking-tighter">
             MIS SOLICITUDES
           </h1>
           <p className="text-sm font-bold text-base-content/40 uppercase tracking-tight">
@@ -207,11 +207,11 @@ export default function SolicitudesPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-4 w-full lg:w-auto">
+        <div className="grid grid-cols-1 sm:flex gap-3 md:gap-4 w-full lg:w-auto">
           <button
             onClick={() => fetchAll(true)}
             disabled={refreshing}
-            className="btn btn-ghost bg-base-200 rounded-2xl h-14 px-6 text-[10px] font-black uppercase tracking-widest border border-base-content/5"
+            className="btn btn-ghost bg-base-200 rounded-2xl h-12 md:h-14 px-6 text-[10px] font-black uppercase tracking-widest border border-base-content/5"
           >
             {refreshing ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -222,7 +222,7 @@ export default function SolicitudesPage() {
           </button>
           <Link
             href="/solicitud/nueva"
-            className="btn-brand flex items-center rounded-2xl h-14 px-10 text-[10px]"
+            className="btn-brand order-first sm:order-none flex items-center justify-center rounded-2xl h-12 md:h-14 px-8 md:px-10 text-[10px] sm:flex-1 lg:flex-none"
           >
             <Plus className="w-5 h-5 mr-1" /> Nueva Solicitud
           </Link>
@@ -230,9 +230,9 @@ export default function SolicitudesPage() {
       </div>
 
       {/* ── Search & Filters ── */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col lg:flex-row gap-3 md:gap-4">
         <div className="relative flex-1 group">
-          <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 left-4 md:left-6 flex items-center pointer-events-none">
             <Search className="w-5 h-5 text-base-content/40 group-focus-within:text-primary transition-colors" />
           </div>
           <input
@@ -240,26 +240,26 @@ export default function SolicitudesPage() {
             placeholder="Buscar por Empresa o Folio..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-base-200 border border-base-content/5 rounded-2xl pl-16 pr-6 py-6 font-bold text-sm focus:outline-none focus:border-primary/40 transition-all shadow-sm"
+            className="w-full bg-base-200 border border-base-content/5 rounded-2xl pl-12 md:pl-16 pr-4 md:pr-6 py-4 md:py-5 font-bold text-sm focus:outline-none focus:border-primary/40 transition-all shadow-sm"
           />
         </div>
 
-        <div className="flex bg-base-200 p-1 rounded-2xl border border-base-content/10 gap-1">
+        <div className="flex bg-base-200 p-1 rounded-2xl border border-base-content/10 gap-1 overflow-x-auto">
           <button
             onClick={() => setFilter("all")}
-            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest ${filter === "all" ? "chip-selected" : "text-base-content/55 hover:text-base-content hover:bg-base-content/[0.05] border border-transparent transition-all"}`}
+            className={`flex-1 md:flex-none min-h-11 px-3 sm:px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider sm:tracking-widest whitespace-nowrap ${filter === "all" ? "chip-selected" : "text-base-content/55 hover:text-base-content hover:bg-base-content/[0.05] border border-transparent transition-all"}`}
           >
             Todas
           </button>
           <button
             onClick={() => setFilter("active")}
-            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest ${filter === "active" ? "chip-selected" : "text-base-content/55 hover:text-base-content hover:bg-base-content/[0.05] border border-transparent transition-all"}`}
+            className={`flex-1 md:flex-none min-h-11 px-3 sm:px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider sm:tracking-widest whitespace-nowrap ${filter === "active" ? "chip-selected" : "text-base-content/55 hover:text-base-content hover:bg-base-content/[0.05] border border-transparent transition-all"}`}
           >
             En Proceso
           </button>
           <button
             onClick={() => setFilter("won")}
-            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest ${filter === "won" ? "chip-selected" : "text-base-content/55 hover:text-base-content hover:bg-base-content/[0.05] border border-transparent transition-all"}`}
+            className={`flex-1 md:flex-none min-h-11 px-3 sm:px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider sm:tracking-widest whitespace-nowrap ${filter === "won" ? "chip-selected" : "text-base-content/55 hover:text-base-content hover:bg-base-content/[0.05] border border-transparent transition-all"}`}
           >
             Finalizadas
           </button>
@@ -268,7 +268,7 @@ export default function SolicitudesPage() {
 
       {/* ── Grid ── */}
       {paginated.length === 0 ? (
-        <div className="py-32 text-center bg-base-200/50 rounded-[3rem] border-2 border-dashed border-base-content/5 flex flex-col items-center gap-6">
+        <div className="py-16 md:py-24 xl:py-32 px-4 text-center bg-base-200/50 rounded-3xl md:rounded-[3rem] border-2 border-dashed border-base-content/5 flex flex-col items-center gap-6">
           <FileText className="w-12 h-12 text-base-content/20" strokeWidth={1.5} />
           <div>
             <h3 className="text-lg font-black text-base-content/40 uppercase tracking-tight">
@@ -280,7 +280,7 @@ export default function SolicitudesPage() {
           </div>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           {paginated.map((s) => {
             const badge = getStageBadge(s.status);
             const initial = (s.business_name || "?").trim().charAt(0).toUpperCase();
@@ -290,7 +290,7 @@ export default function SolicitudesPage() {
                 href={`/solicitud/${s.lead_id}`}
                 className="block group"
               >
-                <div className="card-premium card-hover p-7 h-full flex flex-col gap-6 relative overflow-hidden">
+                <div className="card-premium card-hover p-5 md:p-6 xl:p-7 h-full flex flex-col gap-5 md:gap-6 relative overflow-hidden">
                   <span className={`absolute left-0 top-0 bottom-0 w-1 ${badge.color.replace("text-", "bg-")}`} />
 
                   {/* Identity row */}
@@ -312,7 +312,7 @@ export default function SolicitudesPage() {
                     <ArrowRight className="w-4 h-4 text-base-content/20 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 pl-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pl-2">
                     <p className="text-[9px] font-black text-base-content/40 uppercase tracking-widest font-mono">
                       #OP-{s.lead_id}
                     </p>
@@ -324,7 +324,7 @@ export default function SolicitudesPage() {
                   </div>
 
                   {/* Details Strip */}
-                  <div className="mt-auto grid grid-cols-2 gap-6 pt-5 border-t border-base-content/10 pl-2">
+                  <div className="mt-auto grid grid-cols-2 gap-4 md:gap-6 pt-4 md:pt-5 border-t border-base-content/10 pl-2">
                     <div className="space-y-1">
                       <p className="text-[9px] font-black text-base-content/50 uppercase tracking-widest">
                         Plan Side
@@ -353,7 +353,7 @@ export default function SolicitudesPage() {
           {/* Trailing ghost slot — turns leftover grid space into an
               invitation instead of dead air. */}
           <Link href="/solicitud/nueva" className="block group">
-            <div className="h-full min-h-[176px] rounded-[1.5rem] border-2 border-dashed border-base-content/10 hover:border-primary/40 flex flex-col items-center justify-center gap-3 p-7 transition-all duration-300 hover:bg-primary/[0.03]">
+            <div className="h-full min-h-[176px] rounded-[1.5rem] border-2 border-dashed border-base-content/10 hover:border-primary/40 flex flex-col items-center justify-center gap-3 p-6 md:p-7 transition-all duration-300 hover:bg-primary/[0.03]">
               <Plus
                 strokeWidth={1.5}
                 className="w-8 h-8 text-base-content/30 group-hover:text-primary group-hover:scale-110 transition-all"
@@ -368,7 +368,7 @@ export default function SolicitudesPage() {
 
       {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-8 pt-12 border-t border-base-content/5">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-5 md:gap-8 pt-8 md:pt-12 border-t border-base-content/5">
           <p className="text-[10px] font-black text-base-content/50 uppercase tracking-widest">
             Visualizando{" "}
             <span className="text-base-content/40">
@@ -381,7 +381,8 @@ export default function SolicitudesPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="btn btn-ghost bg-base-200 p-0 w-12 h-12 rounded-2xl disabled:opacity-20 shrink-0"
+              aria-label="Página anterior"
+              className="btn btn-ghost bg-base-200 p-0 w-11 h-11 md:w-12 md:h-12 rounded-2xl disabled:opacity-20 shrink-0"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -393,7 +394,7 @@ export default function SolicitudesPage() {
                 p === DOTS ? (
                   <span
                     key={`dots-${i}`}
-                    className="w-12 h-12 flex items-center justify-center text-base-content/30 text-sm font-black select-none"
+                    className="w-8 sm:w-11 md:w-12 h-11 md:h-12 flex items-center justify-center text-base-content/30 text-sm font-black select-none"
                   >
                     {DOTS}
                   </span>
@@ -401,7 +402,7 @@ export default function SolicitudesPage() {
                   <button
                     key={p}
                     onClick={() => setPage(p as number)}
-                    className={`w-12 h-12 rounded-2xl text-[10px] font-black transition-all shrink-0 ${page === p ? "chip-selected scale-105" : "bg-base-200 border border-transparent text-base-content/45 hover:text-base-content"}`}
+                    className={`w-11 h-11 md:w-12 md:h-12 rounded-2xl text-[10px] font-black transition-all shrink-0 ${page === p ? "chip-selected scale-105" : "bg-base-200 border border-transparent text-base-content/45 hover:text-base-content"}`}
                   >
                     {p}
                   </button>
@@ -411,7 +412,8 @@ export default function SolicitudesPage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="btn btn-ghost bg-base-200 p-0 w-12 h-12 rounded-2xl disabled:opacity-20 shrink-0"
+              aria-label="Página siguiente"
+              className="btn btn-ghost bg-base-200 p-0 w-11 h-11 md:w-12 md:h-12 rounded-2xl disabled:opacity-20 shrink-0"
             >
               <ChevronRight className="w-5 h-5" />
             </button>

@@ -569,14 +569,14 @@ export default function SolicitudDetallePage() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto py-12 px-4 animate-fade-in">
-        <div className="h-10 w-64 bg-base-content/5 rounded-2xl mb-12 animate-pulse" />
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
+      <div className="max-w-7xl mx-auto py-2 md:py-6 xl:py-10 animate-fade-in">
+        <div className="h-10 w-full max-w-64 bg-base-content/5 rounded-2xl mb-8 md:mb-12 animate-pulse" />
+        <div className="grid xl:grid-cols-3 gap-6 md:gap-8">
+          <div className="xl:col-span-2 space-y-6 md:space-y-8">
             <div className="h-96 bg-base-content/[0.03] rounded-[40px] border border-base-content/5 animate-pulse" />
             <div className="h-64 bg-base-content/[0.03] rounded-[40px] border border-base-content/5 animate-pulse" />
           </div>
-          <div className="h-[600px] bg-base-content/[0.03] rounded-[40px] border border-base-content/5 animate-pulse" />
+          <div className="h-80 xl:h-[600px] bg-base-content/[0.03] rounded-[40px] border border-base-content/5 animate-pulse" />
         </div>
       </div>
     );
@@ -584,7 +584,7 @@ export default function SolicitudDetallePage() {
 
   if (error || !solicitud) {
     return (
-      <div className="max-w-2xl mx-auto py-24 text-base-content text-center animate-fade-in">
+      <div className="max-w-2xl mx-auto py-12 md:py-24 text-base-content text-center animate-fade-in">
         <AlertTriangle
           strokeWidth={1.5}
           className="w-16 h-16 text-base-content/30 mx-auto mb-10"
@@ -597,7 +597,7 @@ export default function SolicitudDetallePage() {
         </p>
         <Link
           href="/solicitudes"
-          className="btn-brand px-12 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl inline-flex items-center gap-3"
+          className="btn-brand w-full sm:w-auto px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl inline-flex items-center justify-center gap-3"
         >
           <ArrowLeft className="w-4 h-4" /> Volver al Listado
         </Link>
@@ -620,10 +620,12 @@ export default function SolicitudDetallePage() {
   const allowedNext: string[] = solicitud?.preventa?.allowed_next ?? [];
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 text-base-content space-y-12 animate-fade-in">
+    <div className="max-w-7xl mx-auto py-2 md:py-6 xl:py-10 text-base-content space-y-8 md:space-y-12 animate-fade-in">
       {/* ─── Superior Header Area ─── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
-        <div className="space-y-6 relative pl-6">
+      {/* Título y acciones se ponen lado a lado solo desde xl: con 7 botones,
+          en md/lg la fila apretaba el nombre del cliente hasta romperlo. */}
+      <div className="flex flex-col xl:flex-row justify-between items-stretch xl:items-end gap-6 xl:gap-10">
+        <div className="space-y-4 md:space-y-6 relative pl-5 md:pl-6 min-w-0">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-full shadow-[0_0_15px_var(--brand-accent-glow)]" />
 
           <Link
@@ -638,20 +640,20 @@ export default function SolicitudDetallePage() {
               <div className="h-0.5 w-6 bg-base-content rounded-full" />
               <div className="h-0.5 w-3 bg-base-content rounded-full" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight mb-3 group cursor-default">
+            <h1 className="text-2xl sm:text-3xl xl:text-4xl font-black tracking-tight leading-tight mb-3 group cursor-default break-words">
               {solicitud.business_name}
-              <span className="block text-xl font-mono text-base-content/30 mt-2 tracking-widest group-hover:text-primary transition-colors">
+              <span className="block text-base sm:text-xl font-mono text-base-content/30 mt-2 tracking-widest group-hover:text-primary transition-colors">
                 #{solicitud.id}
               </span>
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="inline-flex items-center gap-3 text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-2xl">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            <span className="inline-flex items-center gap-3 text-[10px] font-black uppercase tracking-widest px-4 sm:px-5 py-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-2xl">
               <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_currentColor] animate-pulse" />
               {solicitud.status || "PENDIENTE"}
             </span>
-            <div className="flex items-center gap-2 bg-base-content/5 border border-base-content/10 px-5 py-2.5 rounded-2xl text-[10px] font-black text-base-content/55 uppercase tracking-widest">
+            <div className="flex items-center gap-2 bg-base-content/5 border border-base-content/10 px-4 sm:px-5 py-2.5 rounded-2xl text-[10px] font-black text-base-content/55 uppercase tracking-widest">
               <Clock className="w-4 h-4 opacity-60" />
               DADA DE ALTA:{" "}
               {new Date(solicitud.created_at)
@@ -665,19 +667,21 @@ export default function SolicitudDetallePage() {
             "Avanzar etapa" es la secundaria confirmada; editar contacto/oportunidad
             son utilitarias y por eso van en tono terciario — así no compiten
             visualmente con la siguiente acción real. */}
-        <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
+        {/* xs: grid de 2 columnas (primaria y secundaria a todo el ancho,
+            utilitarias en pares); md: 3 columnas; xl: fila alineada a la derecha. */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 w-full xl:w-auto xl:max-w-3xl xl:flex xl:flex-wrap xl:justify-end">
           {!editing ? (
             <>
               <button
                 onClick={() =>
                   router.push(`/solicitud/${encodeURIComponent(id)}/cotizacion`)
                 }
-                className="btn-brand flex-1 md:flex-none px-10 py-5 rounded-2xl text-[10px] shadow-[0_0_30px_var(--brand-accent-glow)] flex items-center justify-center gap-3 group active:scale-95"
+                className="btn-brand col-span-2 md:col-span-1 xl:flex-none px-6 sm:px-10 py-4 md:py-5 rounded-2xl text-[10px] shadow-[0_0_30px_var(--brand-accent-glow)] flex items-center justify-center gap-3 group active:scale-95"
               >
                 <Receipt className="w-5 h-5" /> Crear cotización
               </button>
               <div
-                className="relative group/tip flex-1 md:flex-none"
+                className="relative group/tip col-span-2 md:col-span-1 xl:flex-none"
                 title={
                   isWaiting
                     ? "Esta oportunidad está en manos de Ingeniería/Contratación. No puedes avanzarla manualmente hasta que ellos respondan."
@@ -687,7 +691,7 @@ export default function SolicitudDetallePage() {
                 <button
                   onClick={advanceStage}
                   disabled={isWaiting}
-                  className="btn-cta-secondary w-full px-8 py-5 rounded-2xl text-[10px] hover:text-primary hover:border-primary/40 flex items-center justify-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-base-content disabled:hover:border-base-content/15 active:scale-95"
+                  className="btn-cta-secondary w-full h-full px-6 sm:px-8 py-4 md:py-5 rounded-2xl text-[10px] hover:text-primary hover:border-primary/40 flex items-center justify-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-base-content disabled:hover:border-base-content/15 active:scale-95"
                 >
                   {isWaiting ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -699,35 +703,35 @@ export default function SolicitudDetallePage() {
               </div>
               <button
                 onClick={openContactDrawer}
-                className="btn-cta-tertiary flex-1 md:flex-none px-6 py-5 rounded-2xl text-[10px] flex items-center justify-center gap-3 group"
+                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
               >
                 <User className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
                 Editar contacto
               </button>
               <button
                 onClick={openOpportunityDrawer}
-                className="btn-cta-tertiary flex-1 md:flex-none px-6 py-5 rounded-2xl text-[10px] flex items-center justify-center gap-3 group"
+                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
               >
                 <Pencil className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
                 Editar oportunidad
               </button>
               <button
                 onClick={openClientDrawer}
-                className="btn-cta-tertiary flex-1 md:flex-none px-6 py-5 rounded-2xl text-[10px] flex items-center justify-center gap-3 group"
+                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
               >
                 <Building2 className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
                 Editar cliente
               </button>
               <button
                 onClick={openSiteDrawer}
-                className="btn-cta-tertiary flex-1 md:flex-none px-6 py-5 rounded-2xl text-[10px] flex items-center justify-center gap-3 group"
+                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
               >
                 <MapPin className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
                 Editar sitio
               </button>
               <button
                 onClick={openLostModal}
-                className="btn-cta-tertiary flex-1 md:flex-none px-6 py-5 rounded-2xl text-[10px] flex items-center justify-center gap-3 group text-error/60 hover:text-error"
+                className="btn-cta-tertiary col-span-2 md:col-span-3 xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group text-error/60 hover:text-error"
               >
                 <XCircle className="w-4 h-4" /> Marcar como perdida
               </button>
@@ -736,14 +740,14 @@ export default function SolicitudDetallePage() {
             <>
               <button
                 onClick={cancelEdit}
-                className="btn-cta-tertiary flex-1 md:flex-none px-8 py-5 rounded-2xl text-[10px] flex items-center justify-center gap-3"
+                className="btn-cta-tertiary xl:flex-none px-4 sm:px-8 py-4 md:py-5 rounded-2xl text-[10px] flex items-center justify-center gap-2 sm:gap-3"
               >
                 <X className="w-4 h-4" /> Cancelar
               </button>
               <button
                 onClick={() => saveEdit()}
                 disabled={saving}
-                className="flex-1 md:flex-none btn-brand px-12 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-30"
+                className="md:col-span-2 xl:flex-none btn-brand px-4 sm:px-12 py-4 md:py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-30"
               >
                 {saving ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -760,14 +764,14 @@ export default function SolicitudDetallePage() {
 
       {/* ─── Stepper de etapa ─── */}
       {solicitud.timeline?.length > 0 && (
-        <div className="card-premium p-8">
+        <div className="card-premium p-5 md:p-6 xl:p-8">
           <StageStepper steps={solicitud.timeline} />
         </div>
       )}
 
       {/* ─── Pre-Sale Requirements Checklist ─── */}
       {isCapture && !isWaiting && (
-          <div className="bg-base-200 rounded-[40px] p-8 border border-base-content/5 mb-10 shadow-2xl relative overflow-hidden group">
+          <div className="bg-base-200 rounded-3xl md:rounded-[40px] p-5 md:p-6 xl:p-8 border border-base-content/5 mb-6 md:mb-10 shadow-2xl relative overflow-hidden group">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 mb-6">
               <CheckCircle2 className="w-7 h-7 text-(--brand-accent) shrink-0" strokeWidth={1.75} />
               <div className="flex-1">
@@ -791,7 +795,7 @@ export default function SolicitudDetallePage() {
                       router.push(`/solicitud/${id}/cotizacion`);
                     else openOpportunityDrawer();
                   }}
-                  className="px-6 py-3 rounded-xl bg-(--brand-accent) text-primary-content text-[11px] font-black uppercase tracking-widest hover:scale-105 transition-transform shrink-0"
+                  className="w-full sm:w-auto min-h-11 px-6 py-3 rounded-xl bg-(--brand-accent) text-primary-content text-[11px] font-black uppercase tracking-widest hover:scale-105 transition-transform shrink-0"
                 >
                   Completar siguiente
                 </button>
@@ -811,7 +815,7 @@ export default function SolicitudDetallePage() {
               />
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
               {(preventa.items ?? []).map((item: any) => (
                 <button
                   key={item.key}
@@ -844,8 +848,8 @@ export default function SolicitudDetallePage() {
               ))}
             </div>
 
-            <div className="mt-8 pt-8 border-t border-base-content/5 flex flex-col md:flex-row justify-between items-center gap-6">
-              <p className="text-[9px] font-black text-base-content/50 uppercase tracking-[0.2em] max-w-lg text-center md:text-left">
+            <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-base-content/5 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-5 md:gap-6">
+              <p className="text-[9px] font-black text-base-content/50 uppercase tracking-[0.2em] max-w-lg text-center lg:text-left">
                 Toca cualquier requisito en rojo para completarlo. Cuando todo
                 esté en verde podrás enviar la oportunidad a Ingeniería Pre-Venta.
               </p>
@@ -854,7 +858,7 @@ export default function SolicitudDetallePage() {
                   <button
                     onClick={advanceStage}
                     disabled={!preventa.can_advance}
-                    className="px-10 py-5 bg-(--brand-accent) text-primary-content rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-[0_0_40px_var(--brand-accent-glow)] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className="w-full lg:w-auto justify-center px-6 sm:px-10 py-4 md:py-5 bg-(--brand-accent) text-primary-content rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-[0_0_40px_var(--brand-accent-glow)] hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
                     <Zap className="w-5 h-5" /> Enviar a Ingeniería Pre-Venta
                   </button>
@@ -888,7 +892,7 @@ export default function SolicitudDetallePage() {
               TE NOTIFICAREMOS CUANDO SE REQUIERA TU INTERVENCIÓN EN EL PORTAL.
             </p>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 w-full md:w-auto">
             {allowedNext.length > 0 && (
               <button
                 onClick={advanceStage}
@@ -911,11 +915,11 @@ export default function SolicitudDetallePage() {
 
       {/* ─── Opportunity Drawer ─── */}
       {showOpportunityEditor && (
-        <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-md flex justify-end animate-fade-in">
-          <div className="w-full max-w-2xl h-full bg-base-300 border-l border-base-content/10 shadow-[0_0_150px_rgba(0,0,0,1)] p-6 md:p-12 overflow-y-auto animate-slide-in-from-right">
-            <div className="flex items-start justify-between gap-6 mb-12">
-              <div className="flex items-center gap-5">
-                <div className="relative w-14 h-14 shrink-0 flex items-center justify-center">
+        <div className="overlay-backdrop overlay-drawer animate-fade-in">
+          <div className="drawer-panel md:max-w-xl lg:max-w-2xl animate-slide-in-from-right">
+            <div className="flex items-start justify-between gap-4 md:gap-6 mb-8 md:mb-12">
+              <div className="flex items-center gap-3 md:gap-5 min-w-0">
+                <div className="relative w-12 h-12 md:w-14 md:h-14 shrink-0 flex items-center justify-center">
                   <div className="absolute inset-0 bg-(--brand-accent)/15 blur-2xl rounded-full" />
                   <Briefcase className="relative w-9 h-9 text-(--brand-accent)" strokeWidth={1.5} />
                 </div>
@@ -930,14 +934,15 @@ export default function SolicitudDetallePage() {
               </div>
               <button
                 onClick={() => setShowOpportunityEditor(false)}
-                className="w-12 h-12 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors shrink-0"
+                aria-label="Cerrar"
+                className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors shrink-0"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="space-y-10">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-8 md:space-y-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2 sm:col-span-2">
                   <p className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em] mb-2 ml-1">
                     Razón social
@@ -950,7 +955,7 @@ export default function SolicitudDetallePage() {
                         business_name: e.target.value,
                       })
                     }
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent)/50 transition-all font-mono"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent)/50 transition-all font-mono"
                   />
                 </div>
                 <div className="space-y-2">
@@ -962,7 +967,7 @@ export default function SolicitudDetallePage() {
                     onChange={(e) =>
                       setEditData({ ...editData, rfc: e.target.value })
                     }
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-mono focus:border-(--brand-accent)/50 transition-all uppercase"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-mono focus:border-(--brand-accent)/50 transition-all uppercase"
                   />
                 </div>
                 <div className="space-y-2">
@@ -978,7 +983,7 @@ export default function SolicitudDetallePage() {
                         expected_closing: e.target.value,
                       })
                     }
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black focus:border-(--brand-accent)/50 transition-all"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black focus:border-(--brand-accent)/50 transition-all"
                   />
                 </div>
               </div>
@@ -1046,7 +1051,7 @@ export default function SolicitudDetallePage() {
                   if (ok) setShowOpportunityEditor(false);
                 }}
                 disabled={saving}
-                className="w-full py-7 bg-(--brand-accent) text-primary-content rounded-[32px] text-[13px] font-black uppercase tracking-[0.3em] shadow-[0_20px_60px_var(--brand-accent-glow)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 mt-4 flex items-center justify-center gap-4"
+                className="sticky bottom-0 z-10 w-full py-5 md:py-7 bg-(--brand-accent) text-primary-content rounded-3xl md:rounded-[32px] text-[11px] md:text-[13px] font-black uppercase tracking-widest md:tracking-[0.3em] shadow-[0_20px_60px_var(--brand-accent-glow)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 mt-4 flex items-center justify-center gap-4"
               >
                 {saving ? (
                   <Loader2 className="w-8 h-8 animate-spin" />
@@ -1063,11 +1068,11 @@ export default function SolicitudDetallePage() {
 
       {/* ─── Contact Drawer ─── */}
       {showContactEditor && (
-        <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-sm flex justify-end animate-fade-in">
-          <div className="w-full max-w-lg h-full bg-base-300 border-l border-base-content/10 shadow-[0_0_150px_rgba(0,0,0,1)] p-6 md:p-12 overflow-y-auto animate-slide-in-from-right">
-            <div className="flex items-start justify-between gap-6 mb-12">
-              <div className="flex items-center gap-5">
-                <div className="relative w-14 h-14 shrink-0 flex items-center justify-center">
+        <div className="overlay-backdrop overlay-drawer animate-fade-in">
+          <div className="drawer-panel sm:max-w-lg animate-slide-in-from-right">
+            <div className="flex items-start justify-between gap-4 md:gap-6 mb-8 md:mb-12">
+              <div className="flex items-center gap-3 md:gap-5 min-w-0">
+                <div className="relative w-12 h-12 md:w-14 md:h-14 shrink-0 flex items-center justify-center">
                   <div className="absolute inset-0 bg-(--brand-accent)/15 blur-2xl rounded-full" />
                   <User className="relative w-8 h-8 text-(--brand-accent)" strokeWidth={1.5} />
                 </div>
@@ -1082,7 +1087,7 @@ export default function SolicitudDetallePage() {
               </div>
               <button
                 onClick={() => setShowContactEditor(false)}
-                className="w-12 h-12 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors"
+                aria-label="Cerrar" className="w-11 h-11 md:w-12 md:h-12 shrink-0 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -1098,7 +1103,7 @@ export default function SolicitudDetallePage() {
                   onChange={(e) =>
                     setEditData({ ...editData, contact_name: e.target.value })
                   }
-                  className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
+                  className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
                 />
               </div>
               <div className="space-y-2">
@@ -1111,7 +1116,7 @@ export default function SolicitudDetallePage() {
                   onChange={(e) =>
                     setEditData({ ...editData, contact_email: e.target.value })
                   }
-                  className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black lowercase focus:border-(--brand-accent) transition-all"
+                  className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black lowercase focus:border-(--brand-accent) transition-all"
                 />
               </div>
               <div className="space-y-2">
@@ -1123,7 +1128,7 @@ export default function SolicitudDetallePage() {
                   onChange={(e) =>
                     setEditData({ ...editData, contact_phone: e.target.value })
                   }
-                  className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black focus:border-(--brand-accent) transition-all"
+                  className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black focus:border-(--brand-accent) transition-all"
                 />
               </div>
 
@@ -1133,7 +1138,7 @@ export default function SolicitudDetallePage() {
                   if (ok) setShowContactEditor(false);
                 }}
                 disabled={saving}
-                className="w-full py-7 bg-base-content text-base-100 rounded-[28px] text-[12px] font-black uppercase tracking-[0.3em] hover:bg-primary hover:text-primary-content transition-all"
+                className="sticky bottom-0 z-10 w-full py-5 md:py-7 bg-base-content text-base-100 rounded-3xl md:rounded-[28px] text-[11px] md:text-[12px] font-black uppercase tracking-widest md:tracking-[0.3em] hover:bg-primary hover:text-primary-content transition-all"
               >
                 {saving ? (
                   <Loader2 className="w-8 h-8 animate-spin mx-auto" />
@@ -1148,19 +1153,19 @@ export default function SolicitudDetallePage() {
 
       {/* ─── Client Fiscal Data Drawer ─── */}
       {showClientEditor && (
-        <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-md flex justify-end animate-fade-in">
-          <div className="w-full max-w-2xl h-full bg-base-300 border-l border-base-content/10 shadow-[0_0_150px_rgba(0,0,0,1)] p-6 md:p-12 overflow-y-auto animate-slide-in-from-right">
-            <div className="flex items-start justify-between gap-6 mb-10">
-              <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+        <div className="overlay-backdrop overlay-drawer animate-fade-in">
+          <div className="drawer-panel md:max-w-xl lg:max-w-2xl animate-slide-in-from-right">
+            <div className="flex items-start justify-between gap-4 md:gap-6 mb-8 md:mb-10">
+              <div className="flex items-center gap-3 md:gap-5 min-w-0">
+                <div className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <Building2 className="w-8 h-8 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">DATOS FISCALES DEL CLIENTE</h2>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight break-words">DATOS FISCALES DEL CLIENTE</h2>
                   <p className="text-base-content/50 text-[10px] font-black uppercase tracking-[0.2em] mt-2">RFC Y DOMICILIO DE FACTURACIÓN</p>
                 </div>
               </div>
-              <button onClick={() => setShowClientEditor(false)} className="w-12 h-12 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors">
+              <button onClick={() => setShowClientEditor(false)} aria-label="Cerrar" className="w-11 h-11 md:w-12 md:h-12 shrink-0 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -1168,41 +1173,41 @@ export default function SolicitudDetallePage() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">RFC</label>
-                <input value={editData.rfc || ""} onChange={(e) => setEditData({ ...editData, rfc: e.target.value.toUpperCase() })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-mono uppercase focus:border-primary/50" />
+                <input value={editData.rfc || ""} onChange={(e) => setEditData({ ...editData, rfc: e.target.value.toUpperCase() })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-mono uppercase focus:border-primary/50" />
               </div>
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Correo electrónico</label>
-                <input type="email" value={editData.client_email || ""} onChange={(e) => setEditData({ ...editData, client_email: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold focus:border-primary/50" />
+                <input type="email" value={editData.client_email || ""} onChange={(e) => setEditData({ ...editData, client_email: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-bold focus:border-primary/50" />
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2 space-y-2">
                   <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Calle</label>
-                  <input value={editData.street || ""} onChange={(e) => setEditData({ ...editData, street: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                  <input value={editData.street || ""} onChange={(e) => setEditData({ ...editData, street: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-bold uppercase focus:border-primary/50" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Número exterior</label>
-                  <input value={editData.street_number || ""} onChange={(e) => setEditData({ ...editData, street_number: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                  <input value={editData.street_number || ""} onChange={(e) => setEditData({ ...editData, street_number: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-bold uppercase focus:border-primary/50" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Número interior</label>
-                  <input value={editData.street_number2 || ""} onChange={(e) => setEditData({ ...editData, street_number2: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                  <input value={editData.street_number2 || ""} onChange={(e) => setEditData({ ...editData, street_number2: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-bold uppercase focus:border-primary/50" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Colonia</label>
-                  <input value={editData.colony || ""} onChange={(e) => setEditData({ ...editData, colony: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                  <input value={editData.colony || ""} onChange={(e) => setEditData({ ...editData, colony: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-bold uppercase focus:border-primary/50" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Código Postal</label>
-                  <input value={editData.zip || ""} onChange={(e) => setEditData({ ...editData, zip: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50" />
+                  <input value={editData.zip || ""} onChange={(e) => setEditData({ ...editData, zip: e.target.value })} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-bold uppercase focus:border-primary/50" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">Estado</label>
                   <select
                     value={editData.client_state_id || ""}
                     onChange={(e) => setEditData({ ...editData, client_state_id: Number(e.target.value) || null, client_city_id: null })}
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-bold uppercase focus:border-primary/50"
                   >
                     <option value="">Seleccionar estado</option>
                     {states.map((state) => <option key={state.id} value={state.id}>{state.name}</option>)}
@@ -1214,7 +1219,7 @@ export default function SolicitudDetallePage() {
                     value={editData.client_city_id || ""}
                     disabled={!editData.client_state_id}
                     onChange={(e) => setEditData({ ...editData, client_city_id: Number(e.target.value) || null })}
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold uppercase focus:border-primary/50 disabled:opacity-50"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-bold uppercase focus:border-primary/50 disabled:opacity-50"
                   >
                     <option value="">Seleccionar ciudad</option>
                     {clientCities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
@@ -1249,18 +1254,18 @@ export default function SolicitudDetallePage() {
 
       {/* ─── Site Editor Drawer ─── */}
       {showSiteEditor && (
-        <div className="fixed inset-0 z-100 bg-black/80 backdrop-blur-md flex justify-end animate-fade-in">
-          <div className="w-full max-w-4xl h-full bg-base-300 border-l border-base-content/10 shadow-[0_0_150px_rgba(0,0,0,1)] p-6 md:p-12 overflow-y-auto animate-slide-in-from-right relative">
-            <div className="absolute top-0 right-0 p-8">
+        <div className="overlay-backdrop overlay-drawer animate-fade-in">
+          <div className="drawer-panel md:max-w-2xl lg:max-w-3xl xl:max-w-4xl animate-slide-in-from-right relative">
+            <div className="absolute top-0 right-0 p-4 sm:p-6 lg:p-8">
               <button
                 onClick={() => setShowSiteEditor(false)}
-                className="w-12 h-12 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors"
+                aria-label="Cerrar" className="w-11 h-11 md:w-12 md:h-12 shrink-0 rounded-full bg-base-content/5 flex items-center justify-center hover:bg-base-content/10 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="flex items-center gap-4 sm:gap-6 mb-12">
+            <div className="flex items-center gap-4 sm:gap-6 mb-8 md:mb-12 pr-14">
               <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-[28px] md:rounded-[32px] bg-gradient-to-br from-(--brand-accent) to-(--brand-accent-glow) flex items-center justify-center shadow-[0_0_50px_var(--brand-accent-glow)] shrink-0">
                 <MapPin className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-primary-content" />
               </div>
@@ -1274,8 +1279,8 @@ export default function SolicitudDetallePage() {
               </div>
             </div>
 
-            <div className="space-y-12">
-              <div className="grid md:grid-cols-2 gap-10">
+            <div className="space-y-8 md:space-y-12">
+              <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
                 <div className="space-y-3">
                   {!creatingSite ? (
                     <SmartSelector
@@ -1315,7 +1320,7 @@ export default function SolicitudDetallePage() {
                         value={editData.site_name || ""}
                         onChange={(e) => setEditData({ ...editData, site_name: e.target.value })}
                         placeholder="Nombre o referencia del sitio"
-                        className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-sm font-bold"
+                        className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-sm font-bold"
                       />
                     </div>
                   )}
@@ -1412,8 +1417,8 @@ export default function SolicitudDetallePage() {
                 <label className="text-[10px] font-black text-base-content/50 uppercase tracking-[0.2em]">
                   DIRECCIÓN DE INSTALACIÓN
                 </label>
-                <div className="grid md:grid-cols-4 gap-4">
-                  <div className="md:col-span-2">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                  <div className="col-span-2">
                     <input
                       type="text"
                       placeholder="CALLE"
@@ -1424,7 +1429,7 @@ export default function SolicitudDetallePage() {
                           site_street: e.target.value,
                         })
                       }
-                      className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
+                      className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
                     />
                   </div>
                   <input
@@ -1434,7 +1439,7 @@ export default function SolicitudDetallePage() {
                     onChange={(e) =>
                       setEditData({ ...editData, site_number: e.target.value })
                     }
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
                   />
                   <input
                     type="text"
@@ -1443,7 +1448,7 @@ export default function SolicitudDetallePage() {
                     onChange={(e) =>
                       setEditData({ ...editData, site_zip: e.target.value })
                     }
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
                   />
                   <div className="md:col-span-2">
                     <input
@@ -1453,7 +1458,7 @@ export default function SolicitudDetallePage() {
                       onChange={(e) =>
                         setEditData({ ...editData, site_colony: e.target.value })
                       }
-                      className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
+                      className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black uppercase focus:border-(--brand-accent) transition-all"
                     />
                   </div>
                   <select
@@ -1462,7 +1467,7 @@ export default function SolicitudDetallePage() {
                       const state = states.find((item) => item.id === Number(e.target.value));
                       setEditData({ ...editData, site_state_id: state?.id || null, site_state: state?.name || "", site_city_id: null, site_city: "", site_region: "" });
                     }}
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black uppercase"
                   >
                     <option value="">ESTADO</option>
                     {states.map((state) => <option key={state.id} value={state.id}>{state.name}</option>)}
@@ -1474,12 +1479,12 @@ export default function SolicitudDetallePage() {
                       const city = cities.find((item) => item.id === Number(e.target.value));
                       setEditData({ ...editData, site_city_id: city?.id || null, site_city: city?.name || "", site_region: "" });
                     }}
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black uppercase disabled:opacity-50"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black uppercase disabled:opacity-50"
                   >
                     <option value="">CIUDAD</option>
                     {cities.map((city) => <option key={city.id} value={city.id}>{city.name}</option>)}
                   </select>
-                  <input readOnly placeholder="PLAZA (AUTOMÁTICA)" value={editData.site_region || ""} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content/60 text-sm font-black uppercase" />
+                  <input readOnly placeholder="PLAZA (AUTOMÁTICA)" value={editData.site_region || ""} className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content/60 text-sm font-black uppercase" />
                 </div>
               </div>
 
@@ -1494,7 +1499,7 @@ export default function SolicitudDetallePage() {
                     onChange={(e) =>
                       setEditData({ ...editData, site_phone: e.target.value })
                     }
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black focus:border-(--brand-accent) transition-all"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black focus:border-(--brand-accent) transition-all"
                   />
                 </div>
                 <div className="space-y-4 md:col-span-2">
@@ -1507,7 +1512,7 @@ export default function SolicitudDetallePage() {
                     onChange={(e) =>
                       setEditData({ ...editData, site_email: e.target.value })
                     }
-                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-6 py-5 text-base-content text-sm font-black lowercase focus:border-(--brand-accent) transition-all"
+                    className="w-full bg-base-content/[0.03] border border-base-content/10 rounded-2xl px-4 md:px-6 py-4 md:py-5 text-base-content text-sm font-black lowercase focus:border-(--brand-accent) transition-all"
                   />
                 </div>
               </div>
@@ -1586,7 +1591,7 @@ export default function SolicitudDetallePage() {
                   if (ok) setShowSiteEditor(false);
                 }}
                 disabled={saving}
-                className="w-full py-7 bg-base-content text-base-100 hover:bg-primary hover:text-primary-content hover:shadow-[0_0_50px_var(--brand-accent-glow)] rounded-[28px] text-[12px] font-black uppercase tracking-[0.3em] active:scale-[0.98] transition-all disabled:opacity-50 mt-10"
+                className="sticky bottom-0 z-10 w-full py-5 md:py-7 bg-base-content text-base-100 hover:bg-primary hover:text-primary-content hover:shadow-[0_0_50px_var(--brand-accent-glow)] rounded-3xl md:rounded-[28px] text-[11px] md:text-[12px] font-black uppercase tracking-[0.3em] active:scale-[0.98] transition-all disabled:opacity-50 mt-10"
               >
                 {saving ? (
                   <Loader2 className="w-8 h-8 animate-spin mx-auto" />
@@ -1601,13 +1606,13 @@ export default function SolicitudDetallePage() {
 
       {/* ─── Delete Confirmation Modal ─── */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-100 flex items-center justify-center p-6 animate-fade-in">
-          <div className="bg-base-200 rounded-[40px] p-8 sm:p-12 border border-base-content/10 max-w-md w-full shadow-[0_0_100px_rgba(0,0,0,0.8)] animate-slide-in-up relative overflow-hidden">
+        <div className="overlay-backdrop animate-fade-in">
+          <div className="modal-sheet sm:max-w-md overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-error" />
             <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter mb-4 text-center leading-tight sm:leading-none">
               ¿ESTÁ SEGURO?
             </h3>
-            <p className="text-base-content/55 text-[10px] font-black uppercase tracking-[0.2em] mb-12 text-center leading-relaxed">
+            <p className="text-base-content/55 text-[10px] font-black uppercase tracking-[0.2em] mb-8 md:mb-12 text-center leading-relaxed">
               LA SOLICITUD <span className="text-base-content">#{solicitud.id}</span> Y
               TODOS SUS ARCHIVOS SERÁN ELIMINADOS DE FORMA PERMANENTE.
             </p>
@@ -1636,15 +1641,15 @@ export default function SolicitudDetallePage() {
 
       {/* ─── Mark Opportunity Lost Modal ─── */}
       {showLostModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-100 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
-          <div className="bg-base-200 rounded-3xl sm:rounded-[40px] p-6 sm:p-10 border border-base-content/10 max-w-xl w-full shadow-2xl relative overflow-y-auto max-h-[90vh]">
+        <div className="overlay-backdrop animate-fade-in">
+          <div className="modal-sheet sm:max-w-xl">
             <div className="absolute top-0 left-0 right-0 h-1 bg-error" />
-            <div className="flex items-start justify-between gap-4 mb-8">
-              <div>
-                <h3 className="text-2xl font-black uppercase tracking-tight">Marcar como perdida</h3>
+            <div className="flex items-start justify-between gap-4 mb-6 md:mb-8">
+              <div className="min-w-0">
+                <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight">Marcar como perdida</h3>
                 <p className="text-xs text-base-content/55 mt-2">La razón y el comentario son opcionales y sirven para documentar.</p>
               </div>
-              <button onClick={() => setShowLostModal(false)} className="w-10 h-10 rounded-full bg-base-content/5 flex items-center justify-center" aria-label="Cerrar">
+              <button onClick={() => setShowLostModal(false)} className="w-10 h-10 shrink-0 rounded-full bg-base-content/5 flex items-center justify-center" aria-label="Cerrar">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1681,11 +1686,13 @@ export default function SolicitudDetallePage() {
       )}
 
       {/* ─── Main Details Grid ─── */}
-      <div className="grid lg:grid-cols-3 gap-10">
+      {/* 3 columnas solo desde xl: en lg (992px) el sidebar fijo deja ~700px de
+          contenido y la columna lateral quedaba en ~220px, demasiado angosta. */}
+      <div className="grid xl:grid-cols-3 gap-6 md:gap-8 xl:gap-10">
         {/* INFO COLUMN */}
-        <div className="lg:col-span-2 space-y-10">
+        <div className="xl:col-span-2 space-y-6 md:space-y-8 xl:space-y-10">
           {/* ─── Odoo-style Opportunity Details ─── */}
-          <div className="bg-base-200 rounded-[40px] p-6 sm:p-8 md:p-10 border border-base-content/5 relative overflow-hidden shadow-2xl transition-all hover:bg-base-300 group">
+          <div className="bg-base-200 rounded-3xl md:rounded-[40px] p-5 sm:p-8 md:p-10 border border-base-content/5 relative overflow-hidden shadow-2xl transition-all hover:bg-base-300 group">
             <div className="absolute top-0 right-0 w-96 h-96 bg-(--brand-accent)/5 blur-[120px] rounded-full pointer-events-none" />
 
             <div className="flex flex-col gap-6 sm:gap-10 relative z-10">
@@ -1747,7 +1754,7 @@ export default function SolicitudDetallePage() {
               </div>
 
               {/* Data Columns */}
-              <div className="grid md:grid-cols-2 gap-x-20 gap-y-8">
+              <div className="grid md:grid-cols-2 gap-x-8 xl:gap-x-20 gap-y-6 md:gap-y-8">
                 {/* Left Column */}
                 <div className="space-y-6">
                   <DetailItem label="Cliente" value={solicitud.business_name} />
@@ -1830,22 +1837,22 @@ export default function SolicitudDetallePage() {
               </div>
             </div>
           </div>
-          <div className="bg-base-200 rounded-[32px] p-6 sm:p-8 border border-base-content/5">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+          <div className="bg-base-200 rounded-3xl md:rounded-[32px] p-5 sm:p-8 border border-base-content/5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
               <div>
                 <h3 className="text-lg font-black uppercase tracking-tight">Cotizaciones</h3>
                 <p className="text-xs text-base-content/50">Historial directo de esta oportunidad</p>
               </div>
-              <Link href={`/solicitud/${encodeURIComponent(id)}/cotizacion`} className="btn-brand px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest">Nueva cotización</Link>
+              <Link href={`/solicitud/${encodeURIComponent(id)}/cotizacion`} className="btn-brand inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest">Nueva cotización</Link>
             </div>
             {quotations.length === 0 ? (
               <p className="text-sm text-base-content/45">Todavía no hay cotizaciones.</p>
             ) : (
               <div className="divide-y divide-base-content/5">
                 {quotations.map((quote) => (
-                  <Link key={quote.id} href={`/solicitud/${encodeURIComponent(id)}/cotizacion?quotation=${quote.id}`} className="flex items-center justify-between gap-4 py-4 hover:text-primary">
-                    <span><strong className="mr-3">{quote.name}</strong><span className="text-xs text-base-content/45">{quote.state}</span></span>
-                    <span className="font-bold">${Number(quote.amount_total || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}</span>
+                  <Link key={quote.id} href={`/solicitud/${encodeURIComponent(id)}/cotizacion?quotation=${quote.id}`} className="flex items-center justify-between gap-4 py-4 min-h-11 hover:text-primary">
+                    <span className="min-w-0"><strong className="mr-3 break-all">{quote.name}</strong><span className="text-xs text-base-content/45">{quote.state}</span></span>
+                    <span className="font-bold shrink-0">${Number(quote.amount_total || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}</span>
                   </Link>
                 ))}
               </div>
@@ -1853,13 +1860,14 @@ export default function SolicitudDetallePage() {
           </div>
         </div>
 
-        {/* TRACKING COLUMN */}
-        <div className="space-y-10">
+        {/* TRACKING COLUMN — debajo del contenido hasta xl; en md/lg sus dos
+            tarjetas van lado a lado para aprovechar el ancho. */}
+        <div className="grid md:grid-cols-2 xl:grid-cols-1 gap-6 md:gap-8 xl:gap-10 items-start">
           {/* Timeline View */}
-          <div className="bg-base-200 rounded-[40px] p-10 border border-base-content/5 relative overflow-hidden group shadow-2xl">
+          <div className="bg-base-200 rounded-3xl md:rounded-[40px] p-5 sm:p-8 xl:p-10 border border-base-content/5 relative overflow-hidden group shadow-2xl">
             <div className="absolute top-0 right-0 w-48 h-48 bg-(--brand-accent)/5 blur-[80px] rounded-full group-hover:bg-(--brand-accent)/10 transition-colors" />
 
-            <div className="flex items-center gap-4 mb-12">
+            <div className="flex items-center gap-4 mb-8 xl:mb-12">
               <div className="flex flex-col gap-1.5">
                 <div className="h-0.5 w-6 bg-(--brand-accent) rounded-full" />
                 <div className="h-0.5 w-4 bg-(--brand-accent)/30 rounded-full" />
@@ -1924,10 +1932,10 @@ export default function SolicitudDetallePage() {
 
           {/* CRM Integration Details */}
           {solicitud.lead_id && (
-            <div className="bg-base-200 rounded-[40px] p-10 border border-base-content/5 relative overflow-hidden group shadow-2xl transition-all hover:bg-base-300">
+            <div className="bg-base-200 rounded-3xl md:rounded-[40px] p-5 sm:p-8 xl:p-10 border border-base-content/5 relative overflow-hidden group shadow-2xl transition-all hover:bg-base-300">
               <div className="absolute bottom-0 right-0 w-64 h-64 bg-(--brand-accent)/2 blur-[100px] rounded-full" />
 
-              <div className="flex items-center gap-4 mb-12">
+              <div className="flex items-center gap-4 mb-8 xl:mb-12">
                 <div className="flex flex-col gap-1.5">
                   <div className="h-0.5 w-6 bg-(--brand-accent) rounded-full" />
                   <div className="h-0.5 w-4 bg-(--brand-accent)/30 rounded-full" />
@@ -1958,8 +1966,8 @@ export default function SolicitudDetallePage() {
                           key={idx}
                           className="bg-base-content/[0.02] border border-base-content/5 rounded-2xl p-5 hover:bg-base-content/5 transition-all"
                         >
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="text-[11px] font-black text-base-content uppercase truncate max-w-[150px]">
+                          <div className="flex justify-between items-start gap-2 mb-2">
+                            <h4 className="text-[11px] font-black text-base-content uppercase truncate min-w-0">
                               {opp.name}
                             </h4>
                             <span
@@ -2012,7 +2020,7 @@ export default function SolicitudDetallePage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-7 rounded-3xl bg-base-content/[0.02] border border-base-content/5">
+                <div className="flex items-center justify-between gap-4 p-5 md:p-7 rounded-3xl bg-base-content/[0.02] border border-base-content/5">
                   <div>
                     <p className="text-[9px] font-black text-base-content/45 uppercase tracking-widest mb-2">
                       ETAPA ACTUAL CRM
