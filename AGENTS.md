@@ -65,7 +65,7 @@ app/
     solicitudes/page.tsx      Listado con filtros y paginación
     solicitud/nueva/page.tsx  Alta por pasos (stepper)
     solicitud/[id]/page.tsx   Detalle, edición, avance de etapa, marcar perdida
-    solicitud/[id]/cotizacion/page.tsx   Cotizaciones de la solicitud
+    solicitud/[id]/cotizacion/page.tsx   Cotizaciones de la solicitud (visor con los PDF reales de Odoo)
   components/
     ThemeProvider.tsx         useBrandTheme()
     ToastContext.tsx          useToast()
@@ -120,7 +120,7 @@ La cookie de sesión **no puede llamarse `session_id`**: ese nombre lo usa Odoo 
 
 ### Endpoints en uso
 
-`/login`, `/logout`, `/me`, `/notifications`, `/states`, `/cities`, `/regimenes`, `/products`, `/customers`, `/customers/:id/sites`, `/customers/:id/contacts` (+ `/create`), `/partners/:id/related`, `/lost_reasons`, `/lost_subreasons`, `/leads/:id/lost`, `/solicitudes`, `/solicitudes/opportunity`, `/solicitudes/:id` (+ `/update`, `/delete`, `/advance`, `/opportunities`, `/quotations`), `/quotations/:id` (+ `/cancel`, `/send`), `/quotation_templates`, `/subscription_plans`, `/analytic_accounts`.
+`/login`, `/logout`, `/me`, `/notifications`, `/states`, `/cities`, `/regimenes`, `/products`, `/customers`, `/customers/:id/sites`, `/customers/:id/contacts` (+ `/create`), `/partners/:id/related`, `/lost_reasons`, `/lost_subreasons`, `/leads/:id/lost`, `/solicitudes`, `/solicitudes/opportunity`, `/solicitudes/:id` (+ `/update`, `/delete`, `/advance`, `/opportunities`, `/quotations`), `/quotations/:id` (+ `/cancel`, `/send`, `/print`, `/contract`, `/contract/print`), `/quotation_templates`, `/subscription_plans`, `/analytic_accounts`.
 
 ### Backend
 
@@ -164,6 +164,7 @@ El módulo Odoo está fuera de este repo, en `../wispi/wispi_portal_api/` (contr
 - Usa `dvh` en lugar de `vh`/`h-screen` para alturas de pantalla completa.
 - En xs los campos de texto se fuerzan a 16px (evita el zoom de iOS); no lo compenses con clases.
 - Revisa los cambios al menos en 375, 576, 768, 992, 1200 y 1400px.
+- La cotización y el contrato **no se maquetan en el front**: la vista de una cotización existente muestra en un iframe los PDF que genera Odoo (`/quotations/:id/print`, `/contract/print` y, si existe, el contrato firmado de `/contract`), con un switch Cotización/Contrato. Si hay que cambiar el diseño del documento, se cambia el reporte en Odoo.
 
 ## Git
 

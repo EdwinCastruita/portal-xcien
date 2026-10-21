@@ -12,16 +12,17 @@ import {
   ChevronRight,
   CreditCard,
   Download,
+  ExternalLink,
   FileSignature,
   FileText,
   Layers,
   Loader2,
   Mail,
   MapPin,
-  MoveHorizontal,
   Plus,
   Printer,
   Receipt,
+  RotateCw,
   Trash2,
   UploadCloud,
   User,
@@ -31,12 +32,43 @@ import {
 import { API_BASE, apiFetch, getCookie, SESSION_COOKIE } from "@/app/lib/api";
 import SmartSelector from "@/app/components/ui/SmartSelector";
 
+type DocView = "quotation" | "contract";
+type ContractSource = "generated" | "signed";
+
+/**
+ * Descarga un PDF de Odoo como Blob. Va con `fetch` directo (no `apiFetch`)
+ * porque la respuesta es binaria; la sesión y la compañía viajan igual como
+ * `_sid`/`_cid` en la query. El backend puede responder 200 con un JSON de
+ * error de negocio (p. ej. "FALTA información de Representante Legal") en vez
+ * del PDF, así que se valida el content-type y se propaga su `message` real.
+ */
+async function fetchOdooPdf(
+  path: string,
+  fallbackMsg: string,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const url = new URL(`${API_BASE}${path}`, window.location.origin);
+  const session = getCookie(SESSION_COOKIE);
+  if (session) url.searchParams.set("_sid", session);
+  const cid = getCookie("company_id");
+  if (cid) url.searchParams.set("_cid", cid);
+  const res = await fetch(url.toString(), { signal });
+  const contentType = res.headers.get("content-type") || "";
+  if (!res.ok || !contentType.includes("application/pdf")) {
+    const data = await res
+      .clone()
+      .json()
+      .catch(() => null);
+    throw new Error(data?.message || fallbackMsg);
+  }
+  return res.blob();
+}
+
 export default function CotizacionPage() {
   const params = useParams();
   const id = params?.id as string;
   const searchParams = useSearchParams();
   const loadedQueryQuotation = useRef<string | null>(null);
-  const printRef = useRef<HTMLDivElement>(null);
 
   const [solicitud, setSolicitud] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -305,8 +337,6 @@ export default function CotizacionPage() {
       ),
     [lines],
   );
-  const taxes = subtotal * 0.16;
-  const total = subtotal + taxes;
 
   const createQuotation = async () => {
     const validLines = lines.filter((l) => l.product_id !== null);
@@ -449,24 +479,10 @@ export default function CotizacionPage() {
   const downloadContract = async () => {
     if (!currentOrderId) return;
     try {
-      const url = new URL(
-        `${API_BASE}/quotations/${currentOrderId}/contract`,
-        window.location.origin,
+      const blob = await fetchOdooPdf(
+        `/quotations/${currentOrderId}/contract`,
+        "No se pudo descargar el contrato",
       );
-      const session = getCookie(SESSION_COOKIE);
-      if (session) url.searchParams.set("_sid", session);
-      const cid = getCookie("company_id");
-      if (cid) url.searchParams.set("_cid", cid);
-      const res = await fetch(url.toString());
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.message || "No se pudo descargar el contrato");
-      }
-      if (res.headers.get("content-type")?.includes("application/json")) {
-        const data = await res.json();
-        throw new Error(data?.message || "No se pudo generar el contrato");
-      }
-      const blob = await res.blob();
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = contract?.filename || "contrato.pdf";
@@ -480,22 +496,7 @@ export default function CotizacionPage() {
   // Abre en una pestaña nueva un PDF generado por un reporte de Odoo.
   const openOdooPdf = async (path: string, fallbackMsg: string) => {
     try {
-      const url = new URL(`${API_BASE}${path}`, window.location.origin);
-      const session = getCookie(SESSION_COOKIE);
-      if (session) url.searchParams.set("_sid", session);
-      const cid = getCookie("company_id");
-      if (cid) url.searchParams.set("_cid", cid);
-      const res = await fetch(url.toString());
-      const contentType = res.headers.get("content-type") || "";
-      // El backend puede responder 200 OK con un JSON de error de negocio
-      // (p.ej. "FALTA información de Representante Legal") en vez de un
-      // PDF — hay que leer ese mensaje real en vez de mostrar el genérico
-      // "La respuesta no contiene un PDF de contrato" (QA v0.9 punto 10).
-      if (!res.ok || !contentType.includes("application/pdf")) {
-        const data = await res.clone().json().catch(() => null);
-        throw new Error(data?.message || fallbackMsg);
-      }
-      const blob = await res.blob();
+      const blob = await fetchOdooPdf(path, fallbackMsg);
       const fileUrl = URL.createObjectURL(blob);
       window.open(fileUrl, "_blank", "noopener,noreferrer");
       setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
@@ -503,6 +504,109 @@ export default function CotizacionPage() {
       toastError(err.message || fallbackMsg);
     }
   };
+
+  // ── Visor de documentos de Odoo ──
+  // La cotización y el contrato se muestran tal cual los genera Odoo (los
+  // mismos reportes que sus botones "Imprimir"), en vez de una plantilla
+  // propia del portal que podía no coincidir con lo que recibe el cliente.
+  const [docView, setDocView] = useState<DocView>("quotation");
+  const [contractSource, setContractSource] =
+    useState<ContractSource>("generated");
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfReloadKey, setPdfReloadKey] = useState(0);
+  // Caché de object URLs por documento, para que alternar el switch no
+  // vuelva a pedirle el PDF a Odoo (generarlo tarda varios segundos).
+  const pdfCache = useRef(new Map<string, string>());
+  const signedCachedFor = useRef<any>(null);
+
+  const hasSignedContract = Boolean(contract?.uploaded);
+  const effectiveContractSource: ContractSource = hasSignedContract
+    ? contractSource
+    : "generated";
+
+  // Al cargar otra cotización o guardar cambios, los PDF en caché ya no
+  // corresponden: se liberan y se vuelven a pedir.
+  useEffect(() => {
+    if (!quotation) return;
+    const cache = pdfCache.current;
+    return () => {
+      cache.forEach((u) => {
+        URL.revokeObjectURL(u);
+      });
+      cache.clear();
+    };
+  }, [quotation]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `pdfReloadKey` solo existe para forzar el reintento desde el botón.
+  useEffect(() => {
+    if (!quotation || !currentOrderId) return;
+    const key =
+      docView === "quotation" ? "quotation" : `contract-${effectiveContractSource}`;
+
+    // El contrato firmado cambia al subir uno nuevo con la misma cotización.
+    if (key === "contract-signed" && signedCachedFor.current !== contract) {
+      const stale = pdfCache.current.get(key);
+      if (stale) URL.revokeObjectURL(stale);
+      pdfCache.current.delete(key);
+      signedCachedFor.current = contract;
+    }
+
+    setPdfError(null);
+    const cached = pdfCache.current.get(key);
+    if (cached) {
+      setPdfUrl(cached);
+      setPdfLoading(false);
+      return;
+    }
+
+    const path =
+      key === "quotation"
+        ? `/quotations/${currentOrderId}/print`
+        : key === "contract-generated"
+          ? `/quotations/${currentOrderId}/contract/print`
+          : `/quotations/${currentOrderId}/contract`;
+    const fallbackMsg =
+      key === "quotation"
+        ? "No se pudo generar la cotización en Odoo"
+        : key === "contract-generated"
+          ? "No se pudo generar el contrato en Odoo"
+          : "No se pudo cargar el contrato firmado";
+
+    const controller = new AbortController();
+    setPdfUrl(null);
+    setPdfLoading(true);
+    fetchOdooPdf(path, fallbackMsg, controller.signal)
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        pdfCache.current.set(key, url);
+        // Si el usuario ya cambió de pestaña, se guarda en caché pero no se muestra.
+        if (!controller.signal.aborted) setPdfUrl(url);
+      })
+      .catch((err: any) => {
+        if (err?.name !== "AbortError" && !controller.signal.aborted)
+          setPdfError(err?.message || fallbackMsg);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setPdfLoading(false);
+      });
+    return () => controller.abort();
+  }, [
+    quotation,
+    currentOrderId,
+    docView,
+    effectiveContractSource,
+    contract,
+    pdfReloadKey,
+  ]);
+
+  const pdfFileName =
+    docView === "quotation"
+      ? `Cotizacion-${quotation?.name || currentOrderId || ""}.pdf`
+      : effectiveContractSource === "signed"
+        ? contract?.filename || "contrato-firmado.pdf"
+        : `Contrato-${quotation?.name || currentOrderId || ""}.pdf`;
 
   const printWithModal = async (
     path: string,
@@ -541,13 +645,6 @@ export default function CotizacionPage() {
         </p>
       </div>
     );
-
-  const selectedInvoice = addresses.find(
-    (a) => a.id === form.partner_invoice_id,
-  );
-  const selectedShipping = addresses.find(
-    (a) => a.id === form.partner_shipping_id,
-  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -898,230 +995,131 @@ export default function CotizacionPage() {
             </div>
           ) : (
             /* ── PREVIEW MODE ──
-                Este bloque replica una hoja A4 tal cual se imprime/envía en
-                PDF (padding en cm, grid-cols-2 con gaps grandes, altura
-                mínima de página completa) — no tiene sentido "adaptarlo" a
-                mobile comprimiendo su diseño, porque dejaría de verse como
-                el documento real que el cliente va a recibir. En vez de
-                eso: se le da un ancho mínimo fijo y se envuelve en scroll
-                horizontal, con un aviso solo en mobile/tablet. */
-            <div className="overflow-x-auto custom-scrollbar -mx-4 px-4 sm:-mx-5 sm:px-5 md:mx-0 md:px-0">
-              <p className="xxl:hidden mb-4 flex items-center justify-center gap-2 text-center text-[10px] font-black uppercase tracking-widest text-base-content/40">
-                <MoveHorizontal className="w-3.5 h-3.5 shrink-0" />
-                Desliza para ver la cotización completa — se ve mejor en
-                escritorio
-              </p>
-              <div
-                ref={printRef}
-                className="print-area bg-white text-black p-[2.5cm] shadow-2xl min-h-[29.7cm] min-w-[210mm] flex flex-col font-sans border-t-[14px] border-[#003a70] rounded-b-2xl"
-                style={{ fontFamily: "'Comfortaa', sans-serif" }}
-              >
-              <div className="flex justify-between items-start mb-16 pb-12 border-b-2 border-slate-50">
-                <div className="space-y-2">
-                  <h2
-                    className="text-7xl font-black italic tracking-tighter text-[#003a70]"
-                    style={{ fontFamily: "Oswald, sans-serif" }}
+                Muestra el PDF real que genera Odoo. El switch alterna entre
+                la cotización y el contrato; si ya se subió el contrato
+                firmado, un segundo switch permite ver ese archivo. */
+            <div className="space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <div
+                    role="tablist"
+                    aria-label="Documento a mostrar"
+                    className="flex bg-base-200 p-1 rounded-2xl border border-base-content/10 gap-1"
                   >
-                    XCIEN
-                  </h2>
-                  <p className="text-[11px] font-bold text-slate-300 tracking-[0.4em] uppercase">
-                    Connectivity Solutions
-                  </p>
-                </div>
-                <div className="text-right group">
-                  <h1
-                    className="text-5xl font-black uppercase text-slate-900 leading-none"
-                    style={{ fontFamily: "Oswald, sans-serif" }}
-                  >
-                    COTIZACIÓN
-                  </h1>
-                  <div className="mt-4 flex flex-col items-end gap-1">
-                    <span className="text-[10px] font-black text-slate-300 uppercase">
-                      Documento de Venta No.
-                    </span>
-                    <div className="bg-[#003a70] text-white px-8 py-3 rounded-full font-black text-xl shadow-lg border-2 border-[#003a70] group-hover:bg-white group-hover:text-[#003a70] transition-all">
-                      #{quotation.name}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-24 mb-20 relative">
-                <div className="absolute left-1/2 top-4 bottom-4 w-px bg-slate-50 hidden md:block" />
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-black text-slate-200 border-b-2 border-slate-50 pb-3 uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Building2 className="w-3 h-3" /> Información Fiscal
-                  </h4>
-                  <div className="pl-2">
-                    <p className="text-2xl font-black text-[#003a70] uppercase leading-tight mb-2">
-                      {selectedInvoice?.name || solicitud.business_name}
-                    </p>
-                    <p className="text-xs font-black text-slate-400 mb-4 underline decoration-slate-200 decoration-2 underline-offset-4 tracking-tighter italic">
-                      RFC: {solicitud.rfc}
-                    </p>
-                    <p className="text-[12px] text-slate-500 font-medium leading-relaxed bg-slate-50/50 p-6 rounded-3xl border border-slate-50 italic">
-                      {selectedInvoice?.street_name || "Dirección Fiscal"}{" "}
-                      {selectedInvoice?.street_number || ""}
-                      <br />
-                      {selectedInvoice?.l10n_mx_edi_colony || ""}
-                      <br />
-                      {selectedInvoice?.city || ""}, CP{" "}
-                      {selectedInvoice?.zip || ""}
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-black text-slate-200 border-b-2 border-slate-50 pb-3 uppercase tracking-[0.2em] flex items-center gap-2">
-                    <MapPin className="w-3 h-3" /> Punto de Servicio
-                  </h4>
-                  <div className="pl-2">
-                    <p className="text-2xl font-black text-slate-800 uppercase leading-tight mb-6">
-                      {selectedShipping?.name || solicitud.business_name}
-                    </p>
-                    <p className="text-[12px] text-slate-500 font-medium leading-relaxed bg-slate-50/50 p-6 rounded-3xl border border-slate-50 italic">
-                      {selectedShipping?.street_name || "Lugar de Instalación"}{" "}
-                      {selectedShipping?.street_number || ""}
-                      <br />
-                      {selectedShipping?.l10n_mx_edi_colony || ""}
-                      <br />
-                      {selectedShipping?.city || ""}, CP{" "}
-                      {selectedShipping?.zip || ""}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grow mb-12">
-                <table className="w-full text-sm border-spacing-0">
-                  <thead
-                    className="bg-[#003a70] text-white uppercase text-[10px] font-black tracking-widest"
-                    style={{ fontFamily: "Oswald, sans-serif" }}
-                  >
-                    <tr>
-                      <th className="py-6 px-10 text-left rounded-tl-[1.5rem]">
-                        Concepto / Plan Técnico
-                      </th>
-                      <th className="py-6 px-6 text-center w-24">Cant.</th>
-                      <th className="py-6 px-8 text-right w-48">Unitario</th>
-                      <th className="py-6 px-10 text-right w-48 rounded-tr-[1.5rem]">
-                        Subtotal
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(quotation.order_lines || lines).map(
-                      (l: any, i: number) => (
-                        <tr
-                          key={i}
-                          className="border-b-2 border-slate-50 group transition-colors hover:bg-slate-50/50"
-                        >
-                          <td className="py-10 px-10">
-                            <p className="font-black text-slate-800 text-[15px] uppercase tracking-tight">
-                              {l.name}
-                            </p>
-                            <p className="text-[9px] text-slate-300 mt-2 uppercase font-black">
-                              Ref: SIST-TEL-00{l.product_id}
-                            </p>
-                          </td>
-                          <td className="py-10 px-6 text-center text-slate-400 font-black text-lg">
-                            {l.quantity}
-                          </td>
-                          <td className="py-10 px-8 text-right text-slate-500 font-bold font-mono">
-                            $
-                            {Number(l.price).toLocaleString("es-MX", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </td>
-                          <td className="py-10 px-10 text-right font-black text-slate-900 font-mono text-lg">
-                            $
-                            {(l.quantity * l.price).toLocaleString("es-MX", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </td>
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex justify-between items-end mt-20 pt-16 border-t-2 border-slate-100 pb-10 relative">
-                <div className="max-w-md bg-slate-50/80 p-10 rounded-[2.5rem] border-2 border-slate-100 shadow-inner relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-5">
-                    <Receipt className="w-24 h-24 rotate-12" />
-                  </div>
-                  <h5
-                    className="text-[10px] font-black uppercase text-slate-300 mb-4 tracking-[0.1em]"
-                    style={{ fontFamily: "Oswald, sans-serif" }}
-                  >
-                    Cláusulas y Notas Especiales:
-                  </h5>
-                  <div className="text-[11px] text-slate-500 italic leading-[1.8] font-medium whitespace-pre-wrap">
-                    Vigencia de 15 días. Sujeto a factibilidad técnica en sitio. Todos los precios están expresados en Moneda Nacional.
-                  </div>
-                </div>
-
-                <div className="w-96 space-y-6">
-                  <div className="space-y-3 px-6 pb-2 border-b-2 border-slate-50">
-                    <div className="flex justify-between text-[11px] font-black text-slate-300 uppercase tracking-tighter">
-                      <span>Subtotal Bruto</span>
-                      <span className="text-slate-800 font-mono">
-                        $
-                        {subtotal.toLocaleString("es-MX", {
-                          minimumFractionDigits: 2,
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-[11px] font-black text-slate-300 uppercase tracking-tighter">
-                      <span>Impuestos (IVA 16%)</span>
-                      <span className="text-slate-800 font-mono">
-                        $
-                        {taxes.toLocaleString("es-MX", {
-                          minimumFractionDigits: 2,
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-[#003a70] text-white p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex justify-between items-center group-hover:scale-105 transition-transform duration-500">
-                    <div className="relative z-10">
-                      <p
-                        className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50 mb-1"
-                        style={{ fontFamily: "Oswald, sans-serif" }}
+                    {(
+                      [
+                        { value: "quotation", label: "Cotización", Icon: Receipt },
+                        { value: "contract", label: "Contrato", Icon: FileSignature },
+                      ] as const
+                    ).map(({ value, label, Icon }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="tab"
+                        aria-selected={docView === value}
+                        onClick={() => setDocView(value)}
+                        className={`flex items-center justify-center gap-2 min-h-11 px-4 sm:px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          docView === value
+                            ? "chip-selected"
+                            : "text-base-content/55 hover:text-base-content hover:bg-base-content/[0.05] border border-transparent"
+                        }`}
                       >
-                        Importe Total
-                      </p>
-                      <p className="text-[12px] font-bold opacity-80 uppercase tracking-tight italic">
-                        Divisa: Pesos Mexicanos
-                      </p>
-                    </div>
-                    <span
-                      className="text-4xl font-black relative z-10"
-                      style={{ fontFamily: "Oswald, sans-serif" }}
-                    >
-                      $
-                      {total.toLocaleString("es-MX", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </span>
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                        <Icon className="w-4 h-4 shrink-0" /> {label}
+                      </button>
+                    ))}
                   </div>
+
+                  {docView === "contract" && hasSignedContract && (
+                    <div
+                      role="tablist"
+                      aria-label="Versión del contrato"
+                      className="flex bg-base-200 p-1 rounded-2xl border border-base-content/10 gap-1"
+                    >
+                      {(
+                        [
+                          { value: "generated", label: "Odoo" },
+                          { value: "signed", label: "Firmado" },
+                        ] as const
+                      ).map(({ value, label }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          role="tab"
+                          aria-selected={effectiveContractSource === value}
+                          onClick={() => setContractSource(value)}
+                          className={`min-h-11 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                            effectiveContractSource === value
+                              ? "chip-selected"
+                              : "text-base-content/55 hover:text-base-content hover:bg-base-content/[0.05] border border-transparent"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Abrir/descargar: además de útiles, son el respaldo en iOS,
+                    donde un PDF dentro de un iframe solo muestra la 1ª página. */}
+                <div className="grid grid-cols-2 sm:flex gap-2">
+                  <button
+                    type="button"
+                    disabled={!pdfUrl}
+                    onClick={() =>
+                      pdfUrl && window.open(pdfUrl, "_blank", "noopener,noreferrer")
+                    }
+                    className="btn-cta-secondary flex items-center justify-center gap-2 px-4 rounded-xl text-[10px] disabled:opacity-30 disabled:pointer-events-none"
+                  >
+                    <ExternalLink className="w-4 h-4 shrink-0" /> Abrir
+                  </button>
+                  <a
+                    href={pdfUrl || undefined}
+                    download={pdfFileName}
+                    aria-disabled={!pdfUrl}
+                    className={`btn-cta-secondary flex items-center justify-center gap-2 px-4 rounded-xl text-[10px] ${pdfUrl ? "" : "opacity-30 pointer-events-none"}`}
+                  >
+                    <Download className="w-4 h-4 shrink-0" /> Descargar
+                  </a>
                 </div>
               </div>
 
-              <div className="mt-20 pt-20 border-t border-slate-50 text-center">
-                <div className="inline-block border-b-2 border-slate-900 pb-2 px-12 mb-4">
-                  <p
-                    className="text-xs font-black text-slate-900 uppercase"
-                    style={{ fontFamily: "Oswald, sans-serif" }}
-                  >
-                    Firma de Conformidad
-                  </p>
-                </div>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                  {solicitud.business_name} • RESPONSABLE COMERCIAL
-                </p>
+              <div className="relative h-[70dvh] md:h-[80dvh] min-h-[420px] rounded-3xl overflow-hidden border border-base-content/10 bg-base-200">
+                {pdfLoading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+                    <div className="skeleton-shimmer absolute inset-0 opacity-40" />
+                    <Loader2 className="relative w-10 h-10 animate-spin text-primary" />
+                    <p className="relative text-[10px] font-black uppercase tracking-widest text-base-content/55">
+                      Odoo está generando el documento…
+                    </p>
+                  </div>
+                )}
+
+                {!pdfLoading && pdfError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+                    <FileText className="w-10 h-10 text-error/60" strokeWidth={1.5} />
+                    <p className="max-w-md text-sm font-bold text-base-content/75">
+                      {pdfError}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPdfReloadKey((k) => k + 1)}
+                      className="btn-cta-secondary flex items-center gap-2 px-5 rounded-xl text-[10px]"
+                    >
+                      <RotateCw className="w-4 h-4" /> Reintentar
+                    </button>
+                  </div>
+                )}
+
+                {!pdfLoading && !pdfError && pdfUrl && (
+                  <iframe
+                    key={pdfUrl}
+                    src={pdfUrl}
+                    title={docView === "quotation" ? "Cotización de Odoo" : "Contrato"}
+                    className="w-full h-full bg-white"
+                  />
+                )}
               </div>
-            </div>
             </div>
           )}
         </div>
