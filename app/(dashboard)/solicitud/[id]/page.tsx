@@ -48,6 +48,7 @@ import MapPicker from "@/app/components/ui/MapPicker";
 import Link from "next/link";
 import { useToast } from "@/app/components/ToastContext";
 import { apiFetch, ApiError } from "@/app/lib/api";
+import { mapPortalProduct, type PortalProduct, productOption } from "@/app/lib/products";
 import { parseLatLng } from "@/app/lib/geo";
 
 /** Aplana el payload anidado de `/api/portal/solicitudes/<id>` a la forma
@@ -187,7 +188,7 @@ export default function SolicitudDetallePage() {
   // Ciudades del Estado elegido en el drawer "Editar Cliente" (QA v0.9.1 punto 2).
   const [clientCities, setClientCities] = useState<any[]>([]);
   const [creatingSite, setCreatingSite] = useState(false);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<PortalProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   // La lista de requisitos y si se puede avanzar la calcula el BACK
@@ -233,11 +234,7 @@ export default function SolicitudDetallePage() {
         });
         setProducts(
           Array.isArray(res?.products)
-            ? res.products.map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                price: p.list_price ?? p.price ?? 0,
-              }))
+            ? res.products.map(mapPortalProduct)
             : [],
         );
       } catch (err) {
@@ -993,18 +990,14 @@ export default function SolicitudDetallePage() {
                   label="PRODUCTO / PLAN ODOO"
                   placeholder="Buscar producto..."
                   icon={Tag}
-                  options={products.map((p) => ({
-                    id: p.id,
-                    name: p.name,
-                    extra: `$${p.price.toLocaleString()}`,
-                  }))}
+                  options={products.map(productOption)}
                   selectedId={editData.product_id}
                   onSelect={(opt) => {
                     const product = products.find((p) => p.id === opt?.id);
                     setEditData({
                       ...editData,
                       product_id: opt ? Number(opt.id) : "",
-                      plan_speed: opt ? opt.name : editData.plan_speed,
+                      plan_speed: product ? product.name : editData.plan_speed,
                       plan_price: product ? product.price : editData.plan_price,
                     });
                   }}

@@ -30,6 +30,7 @@ import {
   Zap,
 } from "lucide-react";
 import { API_BASE, apiFetch, getCookie, SESSION_COOKIE } from "@/app/lib/api";
+import { mapPortalProduct, productOption } from "@/app/lib/products";
 import SmartSelector from "@/app/components/ui/SmartSelector";
 
 type DocView = "quotation" | "contract";
@@ -149,10 +150,11 @@ export default function CotizacionPage() {
         }).catch(() => null);
         if (resProd?.products) {
           setProducts(
+            // `display_name` (descripción estándar de Odoo, ya con
+            // "[SID-10] … (10 Mbps)") se guarda aparte para la línea.
             resProd.products.map((p: any) => ({
-              id: p.id,
-              name: p.display_name || p.name,
-              price: p.list_price ?? p.price ?? 0,
+              ...mapPortalProduct(p),
+              display_name: p.display_name || p.name,
             })),
           );
         }
@@ -318,7 +320,7 @@ export default function CotizacionPage() {
             return {
               ...l,
               product_id: pid,
-              name: prod?.name || l.name,
+              name: prod?.display_name || prod?.name || l.name,
               price: prod?.price || l.price,
             };
           }
@@ -908,7 +910,7 @@ export default function CotizacionPage() {
                         <SmartSelector
                           size="sm"
                           placeholder="Seleccionar servicio..."
-                          options={products.map((p) => ({ id: p.id, name: p.name, extra: `$${Number(p.price || 0).toLocaleString()}` }))}
+                          options={products.map(productOption)}
                           selectedId={l.product_id}
                           onSelect={(opt) => updateLine(l.id, "product_id", opt ? Number(opt.id) : null)}
                         />

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "../../../lib/api";
+import { mapPortalProduct, type PortalProduct, productOption } from "../../../lib/products";
 import SmartSelector from "../../../components/ui/SmartSelector";
 
 const steps = [
@@ -119,9 +120,7 @@ export default function NuevaSolicitudPage() {
   >([]);
   const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
 
-  const [products, setProducts] = useState<
-    { id: number; name: string; price: number }[]
-  >([]);
+  const [products, setProducts] = useState<PortalProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   // Catálogos reales de Odoo (`res.country.state` / `res.city`) para el
@@ -170,11 +169,7 @@ export default function NuevaSolicitudPage() {
         });
         setProducts(
           Array.isArray(res?.products)
-            ? res.products.map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                price: p.list_price ?? p.price ?? 0,
-              }))
+            ? res.products.map(mapPortalProduct)
             : [],
         );
       } catch (err) {
@@ -253,7 +248,7 @@ export default function NuevaSolicitudPage() {
     setFormData((prev) => ({
       ...prev,
       product_id: opt ? Number(opt.id) : "",
-      plan_speed: opt ? opt.name : "",
+      plan_speed: product ? product.name : "",
       plan_price: product ? product.price : 0,
     }));
   };
@@ -590,11 +585,7 @@ export default function NuevaSolicitudPage() {
               label="PRODUCTO / PLAN"
               placeholder={loadingProducts ? "Cargando planes..." : "Buscar plan..."}
               icon={Tag}
-              options={products.map((p) => ({
-                id: p.id,
-                name: p.name,
-                extra: `$${p.price.toLocaleString()}`,
-              }))}
+              options={products.map(productOption)}
               selectedId={formData.product_id}
               onSelect={handleSelectProduct}
             />
