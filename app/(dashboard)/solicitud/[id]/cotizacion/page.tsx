@@ -524,9 +524,11 @@ export default function CotizacionPage() {
   const signedCachedFor = useRef<any>(null);
 
   const hasSignedContract = Boolean(contract?.uploaded);
-  const effectiveContractSource: ContractSource = hasSignedContract
-    ? contractSource
-    : "generated";
+  // Ver el contrato firmado en el visor está deshabilitado por ahora (el PDF
+  // no carga): el switch Odoo/Firmado se oculta y solo se muestra el de Odoo.
+  const SIGNED_VIEW_ENABLED = false;
+  const effectiveContractSource: ContractSource =
+    hasSignedContract && SIGNED_VIEW_ENABLED ? contractSource : "generated";
 
   // Al cargar otra cotización o guardar cambios, los PDF en caché ya no
   // corresponden: se liberan y se vuelven a pedir.
@@ -1031,7 +1033,7 @@ export default function CotizacionPage() {
                     ))}
                   </div>
 
-                  {docView === "contract" && hasSignedContract && (
+                  {SIGNED_VIEW_ENABLED && docView === "contract" && hasSignedContract && (
                     <div
                       role="tablist"
                       aria-label="Versión del contrato"
