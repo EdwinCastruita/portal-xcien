@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useDeferredValue } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, Check, ChevronDown, LucideIcon, X } from 'lucide-react';
 
@@ -10,6 +10,10 @@ interface Option {
   subtitle?: string;
   extra?: string;
 }
+
+// Máximo de filas pintadas en el menú. La búsqueda corre sobre todas las
+// opciones; solo se limita lo que entra al DOM, que es lo que pesa.
+const MAX_VISIBLE = 50;
 
 interface SmartSelectorProps {
   options: Option[];
@@ -49,11 +53,18 @@ export default function SmartSelector({
   // cualquier orden) en el nombre o subtítulo de la opción, en vez de
   // exigir el texto completo como substring exacto. Así "venta directa"
   // encuentra "Comisiones Ventas Directas" aunque el orden no coincida.
-  const tokens = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
-  const filteredOptions = options.filter(o => {
-    const haystack = `${o.name} ${o.subtitle || ""}`.toLowerCase();
-    return tokens.every(token => haystack.includes(token));
-  }).slice(0, 50);
+  // `useDeferredValue` mantiene el input fluido mientras se recalcula la lista.
+  const deferredSearch = useDeferredValue(searchTerm);
+  const haystacks = useMemo(
+    () => options.map(o => `${o.name} ${o.subtitle || ""}`.toLowerCase()),
+    [options],
+  );
+  const matches = useMemo(() => {
+    const tokens = deferredSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return options;
+    return options.filter((_, i) => tokens.every(token => haystacks[i].includes(token)));
+  }, [options, haystacks, deferredSearch]);
+  const filteredOptions = matches.slice(0, MAX_VISIBLE);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -169,6 +180,11 @@ export default function SmartSelector({
                 <Search className="w-8 h-8 text-base-content/30 mx-auto mb-4" strokeWidth={1.5} />
                 <p className="text-[10px] font-black text-base-content/45 uppercase tracking-widest">No se encontraron resultados</p>
               </div>
+            )}
+            {matches.length > filteredOptions.length && (
+              <p className="px-5 py-3 text-center text-[9px] font-bold text-base-content/45 uppercase tracking-widest">
+                Mostrando {filteredOptions.length} de {matches.length} — escribe para filtrar
+              </p>
             )}
           </div>
         </div>, document.body,
