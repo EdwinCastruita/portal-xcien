@@ -473,7 +473,7 @@ export default function NuevaSolicitudPage() {
                 UBICACIÓN
               </h2>
               <p className="text-base-content/60 text-[10px] font-black uppercase tracking-[0.2em] max-w-sm mx-auto">
-                Selecciona la zona de instalación.
+               Selecciona la dirección fiscal.
               </p>
             </div>
             <div className="space-y-6">
