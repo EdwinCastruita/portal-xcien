@@ -1657,16 +1657,16 @@ export default function SolicitudDetallePage() {
       )}
 
       {/* ─── Panel edge: abre Interacciones desde la orilla de la pantalla.
-          El botón es más ancho que la pestaña para dejar un área táctil de 44px. */}
+          El botón mide 44px para el área táctil aunque la pestaña sea más angosta. */}
       <button
         type="button"
         onClick={() => setShowChatter(true)}
         aria-label="Abrir interacciones"
         title="Interacciones"
-        className="group/edge fixed right-0 top-1/2 -translate-y-1/2 z-40 w-11 h-36 flex items-center justify-end"
+        className="group/edge fixed right-0 top-1/2 -translate-y-1/2 z-40 w-11 h-22 flex items-center justify-end"
       >
-        <span className="w-1.5 h-28 overflow-hidden rounded-l-2xl bg-(--brand-accent)/70 text-primary-content shadow-[0_0_20px_var(--brand-accent-glow)] flex items-center justify-center transition-all duration-200 group-hover/edge:w-10 group-hover/edge:bg-(--brand-accent) group-focus-visible/edge:w-10 group-focus-visible/edge:bg-(--brand-accent)">
-          <MessageSquare className="w-5 h-5 shrink-0 opacity-0 transition-opacity duration-200 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100" />
+        <span className="w-9 h-22 rounded-l-xl bg-(--brand-accent)/80 text-primary-content shadow-[0_0_20px_var(--brand-accent-glow)] flex items-center justify-center transition-all duration-200 group-hover/edge:w-11 group-hover/edge:bg-(--brand-accent) group-focus-visible/edge:w-11 group-focus-visible/edge:bg-(--brand-accent)">
+          <MessageSquare className="w-5 h-5 shrink-0" />
         </span>
       </button>
 
