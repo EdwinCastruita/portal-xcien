@@ -456,6 +456,30 @@ export default function SolicitudDetallePage() {
     }
   };
 
+  const uploadNoteImage = async (file: File): Promise<string> => {
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+        reader.readAsDataURL(file);
+      });
+      const res = await apiFetch(`/solicitudes/${id}/notes/image`, {
+        method: "POST",
+        company: true,
+        body: {
+          name: file.name,
+          mimetype: file.type,
+          data: dataUrl.slice(dataUrl.indexOf(",") + 1),
+        },
+      });
+      return res.url;
+    } catch (err: any) {
+      toastError(err.message);
+      throw err;
+    }
+  };
+
   const addSurvey = async () => {
     setAddingSurvey(true);
     try {
@@ -2015,7 +2039,11 @@ export default function SolicitudDetallePage() {
               </div>
             </div>
             {editingNotes ? (
-              <RichTextEditor value={notesDraft} onChange={setNotesDraft} />
+              <RichTextEditor
+                value={notesDraft}
+                onChange={setNotesDraft}
+                onUploadImage={uploadNoteImage}
+              />
             ) : solicitud.description ? (
               <div
                 className="rich-text text-sm"

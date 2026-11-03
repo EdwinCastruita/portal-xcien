@@ -619,6 +619,12 @@
   .rich-text li > p {
     @apply my-1;
   }
+  .rich-text img {
+    @apply my-3 max-w-full h-auto rounded-xl;
+  }
+  .rich-text img.ProseMirror-selectednode {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
   .rich-text a {
     @apply text-primary underline;
   }

@@ -13,6 +13,7 @@
     "@heroui/button": "^2.2.31",
     "@heroui/system": "^2.4.27",
     "@heroui/theme": "^2.4.26",
+    "@tiptap/extension-image": "3.32.0",
     "@tiptap/pm": "3.32.0",
     "@tiptap/react": "3.32.0",
     "@tiptap/starter-kit": "3.32.0",

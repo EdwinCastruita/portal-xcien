@@ -31,6 +31,12 @@ const nextConfig: NextConfig = {
         source: "/logo.png",
         destination: `${ODOO_HOST}/logo.png`,
       },
+      {
+        // Imágenes de las notas (adjuntos con access_token) — ruta nativa de
+        // Odoo; el HTML guarda la URL relativa para que también sirva en Odoo.
+        source: "/web/image/:path*",
+        destination: `${ODOO_HOST}/web/image/:path*`,
+      },
     ];
   },
 };
