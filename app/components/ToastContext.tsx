@@ -44,9 +44,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 5000);
   }, [removeToast]);
 
-  const success = (msg: string) => toast(msg, "success");
-  const error = (msg: string) => toast(msg, "error");
-  const info = (msg: string) => toast(msg, "info");
+  const success = useCallback((msg: string) => toast(msg, "success"), [toast]);
+  const error = useCallback((msg: string) => toast(msg, "error"), [toast]);
+  const info = useCallback((msg: string) => toast(msg, "info"), [toast]);
 
   return (
     <ToastContext.Provider value={{ toast, success, error, info }}>

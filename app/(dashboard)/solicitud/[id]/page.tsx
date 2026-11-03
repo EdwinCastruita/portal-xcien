@@ -41,10 +41,15 @@ import {
   Copy,
   XCircle,
   UserPlus,
+  ClipboardList,
+  MessageSquare,
 } from "lucide-react";
+import DOMPurify from "dompurify";
 import SmartSelector from "@/app/components/ui/SmartSelector";
 import StageStepper from "@/app/components/ui/StageStepper";
 import MapPicker from "@/app/components/ui/MapPicker";
+import RichTextEditor from "@/app/components/ui/RichTextEditor";
+import ChatterPanel from "@/app/components/ui/ChatterPanel";
 import Link from "next/link";
 import { useToast } from "@/app/components/ToastContext";
 import { apiFetch, ApiError } from "@/app/lib/api";
@@ -141,6 +146,14 @@ export default function SolicitudDetallePage() {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState<any>({});
   const [saving, setSaving] = useState(false);
+
+  // Notes state
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [addingSurvey, setAddingSurvey] = useState(false);
+  const [showSurveyConfirm, setShowSurveyConfirm] = useState(false);
+  const [showChatter, setShowChatter] = useState(false);
 
   // Quotation state
   // (movido a pantalla dedicada /cotizacion)
@@ -406,10 +419,13 @@ export default function SolicitudDetallePage() {
   const saveEdit = async (body: any = editData): Promise<boolean> => {
     setSaving(true);
     try {
+      // `editData` puede ser una copia completa de la solicitud: las notas
+      // solo se guardan desde su tarjeta para no pisarlas con una copia vieja.
+      const { description: _description, ...fields } = body;
       const res = await apiFetch(`/solicitudes/${id}/update`, {
         method: "POST",
         company: true,
-        body,
+        body: fields,
       });
       setSolicitud(flattenSolicitud(res.solicitud));
       setEditing(false);
@@ -419,6 +435,42 @@ export default function SolicitudDetallePage() {
       return false;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveNotes = async () => {
+    setSavingNotes(true);
+    try {
+      const res = await apiFetch(`/solicitudes/${id}/update`, {
+        method: "POST",
+        company: true,
+        body: { description: notesDraft },
+      });
+      setSolicitud(flattenSolicitud(res.solicitud));
+      setEditingNotes(false);
+      success("Notas guardadas");
+    } catch (err: any) {
+      toastError(err.message);
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
+  const addSurvey = async () => {
+    setAddingSurvey(true);
+    try {
+      const res = await apiFetch(`/solicitudes/${id}/add_survey`, {
+        method: "POST",
+        company: true,
+      });
+      setSolicitud(flattenSolicitud(res.solicitud));
+      setShowSurveyConfirm(false);
+      success("Cuestionario agregado a las notas");
+    } catch (err: any) {
+      setShowSurveyConfirm(false);
+      toastError(err.message);
+    } finally {
+      setAddingSurvey(false);
     }
   };
 
@@ -698,6 +750,13 @@ export default function SolicitudDetallePage() {
                   {isWaiting ? "En espera externa" : "Avanzar etapa"}
                 </button>
               </div>
+              <button
+                onClick={() => setShowChatter(true)}
+                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
+              >
+                <MessageSquare className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
+                Interacciones
+              </button>
               <button
                 onClick={openContactDrawer}
                 className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
@@ -1597,6 +1656,57 @@ export default function SolicitudDetallePage() {
         </div>
       )}
 
+      {/* ─── Panel edge: abre Interacciones desde la orilla de la pantalla.
+          El botón es más ancho que la pestaña para dejar un área táctil de 44px. */}
+      <button
+        type="button"
+        onClick={() => setShowChatter(true)}
+        aria-label="Abrir interacciones"
+        title="Interacciones"
+        className="group/edge fixed right-0 top-1/2 -translate-y-1/2 z-40 w-11 h-36 flex items-center justify-end"
+      >
+        <span className="w-1.5 h-28 overflow-hidden rounded-l-2xl bg-(--brand-accent)/70 text-primary-content shadow-[0_0_20px_var(--brand-accent-glow)] flex items-center justify-center transition-all duration-200 group-hover/edge:w-10 group-hover/edge:bg-(--brand-accent) group-focus-visible/edge:w-10 group-focus-visible/edge:bg-(--brand-accent)">
+          <MessageSquare className="w-5 h-5 shrink-0 opacity-0 transition-opacity duration-200 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100" />
+        </span>
+      </button>
+
+      {/* ─── Chatter Drawer ─── */}
+      {showChatter && (
+        <ChatterPanel solicitudId={id} onClose={() => setShowChatter(false)} />
+      )}
+
+      {/* ─── Survey Confirmation Modal ─── */}
+      {showSurveyConfirm && (
+        <div className="overlay-backdrop animate-fade-in">
+          <div className="modal-sheet sm:max-w-md">
+            <h3 className="text-2xl font-black uppercase tracking-tighter mb-4 text-center leading-tight">
+              ¿Agregar cuestionario?
+            </h3>
+            <p className="text-base-content/60 text-sm mb-8 text-center leading-relaxed">
+              Las notas ya tienen contenido. El cuestionario del producto se
+              agregará al final, aunque ya se haya agregado antes.
+            </p>
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
+              <button
+                onClick={() => setShowSurveyConfirm(false)}
+                disabled={addingSurvey}
+                className="btn btn-ghost flex-1"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={addSurvey}
+                disabled={addingSurvey}
+                className="btn-cta-secondary flex-1 rounded-xl py-3 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {addingSurvey ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />}
+                Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ─── Delete Confirmation Modal ─── */}
       {showDeleteConfirm && (
         <div className="overlay-backdrop animate-fade-in">
@@ -1849,6 +1959,71 @@ export default function SolicitudDetallePage() {
                   </Link>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* ─── Notas / Cuestionario ─── */}
+          <div className="bg-base-200 rounded-3xl md:rounded-[40px] p-5 sm:p-8 md:p-10 border border-base-content/5 shadow-2xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-base-content/50">
+                Notas
+              </h3>
+              <div className="flex flex-col sm:flex-row gap-3">
+                {editingNotes ? (
+                  <>
+                    <button
+                      onClick={() => setEditingNotes(false)}
+                      disabled={savingNotes}
+                      className="btn-cta-tertiary w-full sm:w-auto px-5 py-3 rounded-2xl text-[10px] flex items-center justify-center gap-2"
+                    >
+                      <X className="w-4 h-4" /> Cancelar
+                    </button>
+                    <button
+                      onClick={saveNotes}
+                      disabled={savingNotes}
+                      className="btn-cta-secondary w-full sm:w-auto px-5 py-3 rounded-2xl text-[10px] flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {savingNotes ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      Guardar notas
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (solicitud.description) setShowSurveyConfirm(true);
+                        else addSurvey();
+                      }}
+                      disabled={addingSurvey || editing}
+                      className="btn-cta-tertiary w-full sm:w-auto px-5 py-3 rounded-2xl text-[10px] flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {addingSurvey ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />}
+                      Agregar cuestionario
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNotesDraft(solicitud.description || "");
+                        setEditingNotes(true);
+                      }}
+                      disabled={addingSurvey}
+                      className="btn-cta-secondary w-full sm:w-auto px-5 py-3 rounded-2xl text-[10px] flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <Pencil className="w-4 h-4" /> Editar
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+            {editingNotes ? (
+              <RichTextEditor value={notesDraft} onChange={setNotesDraft} />
+            ) : solicitud.description ? (
+              <div
+                className="rich-text text-sm"
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: HTML sanitizado con DOMPurify
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(solicitud.description) }}
+              />
+            ) : (
+              <p className="text-sm text-base-content/50">Sin notas registradas.</p>
             )}
           </div>
         </div>
