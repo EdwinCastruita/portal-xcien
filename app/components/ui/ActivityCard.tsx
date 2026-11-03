@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { getStageBadge } from "../../lib/stages";
 
 interface Props {
   company: string;
@@ -9,56 +10,24 @@ interface Props {
   href?: string;
 }
 
-function getStatusInfo(stat: string) {
+// Pista de "qué sigue" según la etapa. El badge (color y texto) sale de
+// `getStageBadge`, igual que en el listado de solicitudes.
+function getNextHint(stat: string) {
   const s = (stat || "").toLowerCase();
 
-  if (s.includes("aprobad"))
-    return {
-      color: "text-success",
-      bg: "bg-success/10",
-      border: "border-success/20",
-      label: "Aprobada",
-      next: "Lista para avanzar a instalación.",
-    };
-  if (s.includes("info requerida") || s.includes("informaci"))
-    return {
-      color: "text-warning",
-      bg: "bg-warning/10",
-      border: "border-warning/20",
-      label: "Info Requerida",
-      next: "Te falta capturar datos para poder avanzar.",
-    };
-  if (s.includes("pre-venta") || s.includes("preventa") || s.includes("ingenier"))
-    return {
-      color: "text-info",
-      bg: "bg-info/10",
-      border: "border-info/20",
-      label: "Pre-Venta",
-      next: "Ingeniería está evaluando factibilidad.",
-    };
-  if (s.includes("concretado") || s.includes("ganada") || s.includes("won") || s.includes("activ"))
-    return {
-      color: "text-success",
-      bg: "bg-success/10",
-      border: "border-success/20",
-      label: "Contratada",
-      next: "Servicio activo. Sin pendientes.",
-    };
+  if (s.includes("concretado") || s.includes("ganada") || s.includes("won") || s.includes("cerrada") || s.includes("activ"))
+    return "Servicio activo. Sin pendientes.";
   if (s.includes("perdida") || s.includes("lost") || s.includes("cancel"))
-    return {
-      color: "text-error",
-      bg: "bg-error/10",
-      border: "border-error/20",
-      label: "Perdida/Canc.",
-      next: "Este trámite ya no está en proceso.",
-    };
-  return {
-    color: "text-primary",
-    bg: "bg-primary/10",
-    border: "border-primary/20",
-    label: "En Análisis",
-    next: "En revisión. Aún no requiere tu acción.",
-  };
+    return "Este trámite ya no está en proceso.";
+  if (s.includes("info requerida") || s.includes("informaci"))
+    return "Te falta capturar datos para poder avanzar.";
+  if (s.includes("pre-venta") || s.includes("preventa") || s.includes("ingenier"))
+    return "Ingeniería está evaluando factibilidad.";
+  if (s.includes("habilit"))
+    return "El equipo de habilitación está preparando el servicio.";
+  if (s.includes("aprobad"))
+    return "Lista para avanzar a instalación.";
+  return "Revisa el seguimiento para ver el siguiente paso.";
 }
 
 export default function ActivityCard({
@@ -68,7 +37,8 @@ export default function ActivityCard({
   date,
   href,
 }: Props) {
-  const info = getStatusInfo(status);
+  const info = getStageBadge(status);
+  const next = getNextHint(status);
   const initial = (company || "?").trim().charAt(0).toUpperCase();
 
   return (
@@ -101,7 +71,7 @@ export default function ActivityCard({
 
         {/* Group 3: what happens next — the descriptive timeline hint */}
         <p className="text-xs font-bold text-base-content/65 leading-snug mb-5 md:mb-6 pl-2">
-          {info.next}
+          {next}
         </p>
 
         <div className="mt-auto pt-4 md:pt-5 border-t border-base-content/10 flex items-center justify-between pl-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -45,6 +45,9 @@ function FormInput({
   onChange,
   error,
   required = true,
+  inputRef,
+  onFocus,
+  onBlur,
 }: {
   label: string;
   name: string;
@@ -55,6 +58,9 @@ function FormInput({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
   required?: boolean;
+  inputRef?: React.Ref<HTMLInputElement>;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   return (
     <div className="space-y-2 group">
@@ -67,6 +73,10 @@ function FormInput({
           name={name}
           value={value}
           onChange={onChange}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          ref={inputRef}
+          autoComplete={onFocus ? "off" : undefined}
           placeholder={placeholder}
           className={`w-full bg-base-200 border rounded-2xl px-5 py-4 text-sm
             focus:outline-none focus:border-[var(--brand-accent)]/50 focus:bg-base-300
@@ -119,6 +129,9 @@ export default function NuevaSolicitudPage() {
     { id: number; name: string; email: string; phone: string }[]
   >([]);
   const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
+  const [contactFocused, setContactFocused] = useState(false);
+  const contactInputRef = useRef<HTMLInputElement>(null);
+  const selectedContact = customerContacts.find((c) => c.id === selectedContactId);
 
   const [products, setProducts] = useState<PortalProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -237,10 +250,46 @@ export default function NuevaSolicitudPage() {
     if (name === "rfc" || name === "business_name") {
       setSelectedCustomer(null);
     }
-    // Editar el nombre a mano significa que es un contacto distinto.
-    if (name === "contact_name") {
+    // Editar el nombre a mano significa que es un contacto distinto: se
+    // desliga y se quitan el email/teléfono que venían de él (no los que se
+    // hayan capturado a mano).
+    if (name === "contact_name" && selectedContact) {
       setSelectedContactId(null);
+      setFormData((prev) => ({
+        ...prev,
+        contact_email: prev.contact_email === selectedContact.email ? "" : prev.contact_email,
+        contact_phone: prev.contact_phone === selectedContact.phone ? "" : prev.contact_phone,
+      }));
     }
+  };
+
+  // Sugerencias de contactos del cliente existente mientras se escribe el
+  // nombre, con la misma búsqueda por palabras que `SmartSelector`.
+  const contactSuggestions = useMemo(() => {
+    if (selectedContactId) return [];
+    const tokens = formData.contact_name.toLowerCase().split(/\s+/).filter(Boolean);
+    return customerContacts.filter((c) => {
+      const haystack = `${c.name} ${c.email} ${c.phone}`.toLowerCase();
+      return tokens.every((token) => haystack.includes(token));
+    });
+  }, [customerContacts, selectedContactId, formData.contact_name]);
+
+  const selectContact = (contact: (typeof customerContacts)[number]) => {
+    setSelectedContactId(contact.id);
+    setFormData((prev) => ({
+      ...prev,
+      contact_name: contact.name || "",
+      contact_email: contact.email || prev.contact_email,
+      contact_phone: contact.phone || prev.contact_phone,
+    }));
+    setErrors((prev) => ({ ...prev, contact_name: "", contact_email: "", contact_phone: "" }));
+    setContactFocused(false);
+  };
+
+  const clearContact = () => {
+    setSelectedContactId(null);
+    setFormData((prev) => ({ ...prev, contact_name: "", contact_email: "", contact_phone: "" }));
+    contactInputRef.current?.focus();
   };
 
   const handleSelectProduct = (opt: { id: number | string; name: string } | null) => {
@@ -767,40 +816,61 @@ export default function NuevaSolicitudPage() {
                     Contacto Directo
                   </h3>
                 </div>
-                {selectedCustomer && customerContacts.length > 0 && (
-                  <SmartSelector
-                    label="CONTACTO EXISTENTE"
-                    placeholder="Elegir un contacto del cliente..."
-                    options={customerContacts.map((c) => ({
-                      id: c.id,
-                      name: c.name,
-                      subtitle: [c.email, c.phone].filter(Boolean).join(" · "),
-                    }))}
-                    selectedId={selectedContactId}
-                    onSelect={(opt) => {
-                      const contact = customerContacts.find((c) => c.id === Number(opt?.id));
-                      setSelectedContactId(contact ? contact.id : null);
-                      if (contact) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          contact_name: contact.name || "",
-                          contact_email: contact.email || prev.contact_email,
-                          contact_phone: contact.phone || prev.contact_phone,
-                        }));
-                        setErrors((prev) => ({ ...prev, contact_name: "", contact_email: "", contact_phone: "" }));
-                      }
-                    }}
+                <div className="relative">
+                  <FormInput
+                    label="NOMBRE"
+                    name="contact_name"
+                    placeholder={
+                      customerContacts.length > 0
+                        ? "Busca un contacto del cliente o captura uno nuevo"
+                        : "Ej: Juan Pérez"
+                    }
+                    icon={User}
+                    value={formData.contact_name}
+                    onChange={handleChange}
+                    error={errors.contact_name}
+                    inputRef={contactInputRef}
+                    onFocus={() => setContactFocused(true)}
+                    onBlur={() => setContactFocused(false)}
                   />
-                )}
-                <FormInput
-                  label="NOMBRE"
-                  name="contact_name"
-                  placeholder="Ej: Juan Pérez"
-                  icon={User}
-                  value={formData.contact_name}
-                  onChange={handleChange}
-                  error={errors.contact_name}
-                />
+                  {contactFocused && contactSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-[120] mt-2 max-h-64 overflow-y-auto rounded-2xl border border-base-content/10 bg-base-300 shadow-2xl">
+                      {contactSuggestions.map((contact) => (
+                        <button
+                          key={contact.id}
+                          type="button"
+                          // mousedown: elige antes de que el blur cierre la lista.
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectContact(contact);
+                          }}
+                          className="block w-full px-5 py-3 text-left hover:bg-primary/10"
+                        >
+                          <span className="block text-sm font-bold">{contact.name}</span>
+                          <span className="block text-xs text-base-content/50">
+                            {[contact.email, contact.phone].filter(Boolean).join(" · ")}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {selectedContact && (
+                    <p className="mt-2 text-xs font-bold text-success">
+                      Contacto existente seleccionado: {selectedContact.name}
+                      {" · "}
+                      <button
+                        type="button"
+                        onClick={clearContact}
+                        className="underline underline-offset-2 hover:text-base-content"
+                      >
+                        Quitar
+                      </button>
+                    </p>
+                  )}
+                  {!selectedContact && selectedCustomer && formData.contact_name.trim() && (
+                    <p className="mt-2 text-xs text-base-content/45">Se creará un nuevo contacto con este nombre.</p>
+                  )}
+                </div>
                 <FormInput
                   label="EMAIL"
                   name="contact_email"

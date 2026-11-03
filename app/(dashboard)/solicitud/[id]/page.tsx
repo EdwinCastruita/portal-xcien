@@ -50,6 +50,7 @@ import StageStepper from "@/app/components/ui/StageStepper";
 import MapPicker from "@/app/components/ui/MapPicker";
 import RichTextEditor from "@/app/components/ui/RichTextEditor";
 import ChatterPanel from "@/app/components/ui/ChatterPanel";
+import OverflowMenu from "@/app/components/ui/OverflowMenu";
 import Link from "next/link";
 import { useToast } from "@/app/components/ToastContext";
 import { apiFetch, ApiError } from "@/app/lib/api";
@@ -97,12 +98,17 @@ function DetailItem({
   isLink = false,
   href = "",
   isMono = false,
+  onEdit,
+  editLabel,
 }: {
   label: string;
   value: any;
   isLink?: boolean;
   href?: string;
   isMono?: boolean;
+  /** Muestra un lápiz junto a la etiqueta que abre el editor de ese dato. */
+  onEdit?: () => void;
+  editLabel?: string;
 }) {
   const content = (
     <p
@@ -114,9 +120,22 @@ function DetailItem({
 
   return (
     <div className="space-y-1">
-      <p className="text-[9px] font-black text-base-content/50 uppercase tracking-[0.2em]">
-        {label}
-      </p>
+      <div className="flex items-center gap-1">
+        <p className="text-[9px] font-black text-base-content/50 uppercase tracking-[0.2em]">
+          {label}
+        </p>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={editLabel || `Editar ${label.toLowerCase()}`}
+            title={editLabel || `Editar ${label.toLowerCase()}`}
+            className="-my-3 w-11 h-11 rounded-xl flex items-center justify-center text-base-content/35 hover:text-(--brand-accent) hover:bg-base-content/5 transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
       {isLink && value ? (
         <a
           href={href}
@@ -726,6 +745,16 @@ export default function SolicitudDetallePage() {
               <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_currentColor] animate-pulse" />
               {solicitud.status || "PENDIENTE"}
             </span>
+            {isWaiting && (
+              <span
+                title="Esta oportunidad está en manos de Ingeniería/Contratación. No puedes avanzarla manualmente hasta que ellos respondan."
+                className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 sm:px-5 py-2.5 rounded-2xl bg-base-content/5 text-base-content/60 border border-base-content/10 cursor-help"
+              >
+                <Clock className="w-4 h-4 opacity-60" />
+                {isPreVenta ? "Esperando a Ingeniería" : "En espera externa"}
+                <Info className="w-3.5 h-3.5 opacity-60" />
+              </span>
+            )}
             <div className="flex items-center gap-2 bg-base-content/5 border border-base-content/10 px-4 sm:px-5 py-2.5 rounded-2xl text-[10px] font-black text-base-content/55 uppercase tracking-widest">
               <Clock className="w-4 h-4 opacity-60" />
               DADA DE ALTA:{" "}
@@ -737,84 +766,47 @@ export default function SolicitudDetallePage() {
         </div>
 
         {/* CTA hierarchy: UNA sola acción primaria (Crear cotización).
-            "Avanzar etapa" es la secundaria confirmada; editar contacto/oportunidad
-            son utilitarias y por eso van en tono terciario — así no compiten
-            visualmente con la siguiente acción real. */}
-        {/* xs: grid de 2 columnas (primaria y secundaria a todo el ancho,
-            utilitarias en pares); md: 3 columnas; xl: fila alineada a la derecha. */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 w-full xl:w-auto xl:max-w-3xl xl:flex xl:flex-wrap xl:justify-end">
+            "Avanzar etapa" solo aparece cuando el vendedor puede avanzar (si
+            no, la espera se muestra como estado junto a la etapa). Interacciones
+            queda como icono, y las ediciones y "Marcar como perdida" van en
+            el menú ⋯ y junto a cada dato, para no abrumar con 8 botones. */}
+        <div className="flex flex-wrap items-stretch gap-2 sm:gap-3 w-full xl:w-auto xl:justify-end">
           {!editing ? (
             <>
               <button
                 onClick={() =>
                   router.push(`/solicitud/${encodeURIComponent(id)}/cotizacion`)
                 }
-                className="btn-brand col-span-2 md:col-span-1 xl:flex-none px-6 sm:px-10 py-4 md:py-5 rounded-2xl text-[10px] shadow-[0_0_30px_var(--brand-accent-glow)] flex items-center justify-center gap-3 group active:scale-95"
+                className="btn-brand flex-1 xl:flex-none min-w-[12rem] px-6 sm:px-10 py-4 rounded-2xl text-[10px] shadow-[0_0_30px_var(--brand-accent-glow)] flex items-center justify-center gap-3 group active:scale-95"
               >
                 <Receipt className="w-5 h-5" /> Crear cotización
               </button>
-              <div
-                className="relative group/tip col-span-2 md:col-span-1 xl:flex-none"
-                title={
-                  isWaiting
-                    ? "Esta oportunidad está en manos de Ingeniería/Contratación. No puedes avanzarla manualmente hasta que ellos respondan."
-                    : undefined
-                }
-              >
+              {!isWaiting && (
                 <button
                   onClick={advanceStage}
-                  disabled={isWaiting}
-                  className="btn-cta-secondary w-full h-full px-6 sm:px-8 py-4 md:py-5 rounded-2xl text-[10px] hover:text-primary hover:border-primary/40 flex items-center justify-center gap-3 group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-base-content disabled:hover:border-base-content/15 active:scale-95"
+                  className="btn-cta-secondary flex-1 xl:flex-none min-w-[10rem] px-6 sm:px-8 py-4 rounded-2xl text-[10px] hover:text-primary hover:border-primary/40 flex items-center justify-center gap-3 group active:scale-95"
                 >
-                  {isWaiting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <TrendingUp className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  )}
-                  {isWaiting ? "En espera externa" : "Avanzar etapa"}
+                  <TrendingUp className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  Avanzar etapa
                 </button>
-              </div>
+              )}
               <button
                 onClick={() => setShowChatter(true)}
-                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
+                aria-label="Interacciones"
+                title="Interacciones"
+                className="btn-cta-secondary min-h-11 px-4 rounded-2xl flex items-center justify-center hover:text-primary hover:border-primary/40"
               >
-                <MessageSquare className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
-                Interacciones
+                <MessageSquare className="w-5 h-5" />
               </button>
-              <button
-                onClick={openContactDrawer}
-                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
-              >
-                <User className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
-                Editar contacto
-              </button>
-              <button
-                onClick={openOpportunityDrawer}
-                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
-              >
-                <Pencil className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
-                Editar oportunidad
-              </button>
-              <button
-                onClick={openClientDrawer}
-                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
-              >
-                <Building2 className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
-                Editar cliente
-              </button>
-              <button
-                onClick={openSiteDrawer}
-                className="btn-cta-tertiary xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group"
-              >
-                <MapPin className="w-4 h-4 group-hover:text-primary transition-colors" />{" "}
-                Editar sitio
-              </button>
-              <button
-                onClick={openLostModal}
-                className="btn-cta-tertiary col-span-2 md:col-span-3 xl:flex-none px-3 sm:px-6 py-3 md:py-4 rounded-2xl text-[10px] text-center leading-tight flex items-center justify-center gap-2 sm:gap-3 group text-error/60 hover:text-error"
-              >
-                <XCircle className="w-4 h-4" /> Marcar como perdida
-              </button>
+              <OverflowMenu
+                items={[
+                  { label: "Editar oportunidad", icon: Pencil, onClick: openOpportunityDrawer },
+                  { label: "Editar cliente", icon: Building2, onClick: openClientDrawer },
+                  { label: "Editar contacto", icon: User, onClick: openContactDrawer },
+                  { label: "Editar sitio", icon: MapPin, onClick: openSiteDrawer },
+                  { label: "Marcar como perdida", icon: XCircle, onClick: openLostModal, danger: true },
+                ]}
+              />
             </>
           ) : (
             <>
@@ -1884,7 +1876,11 @@ export default function SolicitudDetallePage() {
               <div className="grid md:grid-cols-2 gap-x-8 xl:gap-x-20 gap-y-6 md:gap-y-8">
                 {/* Left Column */}
                 <div className="space-y-6">
-                  <DetailItem label="Cliente" value={solicitud.business_name} />
+                  <DetailItem
+                    label="Cliente"
+                    value={solicitud.business_name}
+                    onEdit={openClientDrawer}
+                  />
                   <DetailItem
                     label="Correo"
                     value={solicitud.contact_email}
@@ -1895,10 +1891,16 @@ export default function SolicitudDetallePage() {
                     label="Teléfono"
                     value={solicitud.contact_phone}
                   />
-                  <DetailItem label="Sitio" value={solicitud.site_name} />
+                  <DetailItem
+                    label="Sitio"
+                    value={solicitud.site_name}
+                    onEdit={openSiteDrawer}
+                  />
                   <DetailItem
                     label="Contacto en Sitio"
                     value={solicitud.site_contact}
+                    onEdit={openContactDrawer}
+                    editLabel="Editar contacto"
                   />
                   <DetailItem label="RFC" value={solicitud.rfc} isMono />
                 </div>
@@ -1929,6 +1931,8 @@ export default function SolicitudDetallePage() {
                   <DetailItem
                     label="Producto / Plan"
                     value={solicitud.plan_speed}
+                    onEdit={openOpportunityDrawer}
+                    editLabel="Editar oportunidad"
                   />
                   <DetailItem
                     label="Ubicación"
@@ -1956,7 +1960,7 @@ export default function SolicitudDetallePage() {
 
               <div className="pt-10 flex justify-end">
                 <button
-                  onClick={() => setShowOpportunityEditor(true)}
+                  onClick={openOpportunityDrawer}
                   className="px-8 py-4 bg-base-content/[0.03] hover:bg-base-content/5 border border-base-content/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-base-content/60 hover:text-(--brand-accent) transition-all flex items-center gap-2"
                 >
                   <Pencil className="w-4 h-4" /> Editar datos

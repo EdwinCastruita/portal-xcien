@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { apiFetch } from "../../lib/api";
+import { getStageBadge } from "../../lib/stages";
 
 const PAGE_SIZE = 10;
 
@@ -66,46 +67,6 @@ function getPaginationRange(
   }
 
   return [1, DOTS, ...range(leftSiblingIndex, rightSiblingIndex), DOTS, totalPages];
-}
-
-function getStageBadge(status: string) {
-  const s = (status || "").toLowerCase();
-
-  if (s.includes("concretado") || s.includes("ganada") || s.includes("won") || s.includes("cerrada") || s.includes("activ"))
-    return {
-      bg: "bg-success/10",
-      border: "border-success/20",
-      color: "text-success",
-      label: "Contratada",
-    };
-  if (s.includes("perdida") || s.includes("lost") || s.includes("cancel"))
-    return {
-      bg: "bg-error/10",
-      border: "border-error/20",
-      color: "text-error",
-      label: "Perdida/Canc.",
-    };
-  if (s.includes("contratacion") || s.includes("contratación"))
-    return {
-      bg: "bg-info/10",
-      border: "border-info/20",
-      color: "text-info",
-      label: "Contratación",
-    };
-  if (s.includes("pre-venta") || s.includes("preventa") || s.includes("habilit"))
-    return {
-      bg: "bg-info/10",
-      border: "border-info/20",
-      color: "text-info",
-      label: "Habilitación",
-    };
-
-  return {
-    bg: "bg-primary/10",
-    border: "border-primary/20",
-    color: "text-primary",
-    label: status || "En Análisis",
-  };
 }
 
 export default function SolicitudesPage() {

@@ -129,7 +129,7 @@ export default function RecentActivity() {
               key={sol.lead_id}
               company={sol.business_name}
               folio={`OP-${sol.lead_id}`}
-              status={sol.status || "EN ANALISIS"}
+              status={sol.status || ""}
               date={new Date(sol.create_date)
                 .toLocaleDateString("es-MX", {
                   day: "2-digit",
