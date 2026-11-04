@@ -4,6 +4,9 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 type Theme =
+  | "xcien"
+  | "luminet"
+  | "huus"
   | "dim"
   | "dark"
   | "cupcake"
@@ -41,6 +44,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const isLoginRoute = pathname === LOGIN_ROUTE;
   const [theme, setThemeState] = useState<Theme>("dark");
   const themeOptions: Theme[] = [
+    "xcien",
+    "luminet",
+    "huus",
     "dim",
     "obsidian",
     "aurora",

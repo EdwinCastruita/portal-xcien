@@ -13,6 +13,9 @@ function getGreeting() {
 }
 
 const THEME_LABELS: Record<string, string> = {
+  xcien: "XCIEN",
+  luminet: "Luminet",
+  huus: "Huus",
   dim: "Dim",
   obsidian: "Obsidian",
   aurora: "Aurora",

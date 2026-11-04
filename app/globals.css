@@ -303,6 +303,127 @@
   --noise: 0;
 }
 
+/* ── Temas de marca ──
+   Paletas entregadas por diseño; los tonos que no venían en la paleta
+   (base-300, textos de contraste) se derivan de ella. */
+
+/* XCIEN: 1A1C22 · 7A7B7F · FFFFFF · 181E1E · 65D46E
+   Blanco suavizado para texto largo (el FFFFFF puro deslumbra sobre negro),
+   neutral oscuro derivado de 1A1C22 (el gris 7A7B7F como superficie se veía
+   lavado) y un acento en tinte claro del verde de marca. */
+@plugin "daisyui/theme" {
+  name: "xcien";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: #1A1C22;
+  --color-base-200: #181E1E;
+  --color-base-300: #121515;
+  --color-base-content: #F2F3F5;
+  --color-primary: #65D46E;
+  --color-primary-content: #0E2A11;
+  --color-secondary: #7A7B7F;
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #8BE193;
+  --color-accent-content: #0E2A11;
+  --color-neutral: #24272E;
+  --color-neutral-content: #F2F3F5;
+  --color-info: oklch(76% 0.12 225);
+  --color-info-content: oklch(15% 0.02 225);
+  --color-success: oklch(78% 0.16 150);
+  --color-success-content: oklch(15% 0.03 150);
+  --color-warning: oklch(82% 0.15 85);
+  --color-warning-content: oklch(15% 0.03 85);
+  --color-error: oklch(68% 0.19 25);
+  --color-error-content: oklch(15% 0.03 25);
+  --radius-selector: 1rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Luminet: 94A1BA · B5BECF · 344E7C · 354E7D · 649E3C
+   Fondos en azul marino profundo derivado de 344E7C (con 344E7C/354E7D de
+   fondo, el verde de marca no se leía como texto: contraste 2.6). Así el
+   verde 649E3C se usa tal cual y 344E7C queda para superficies y acentos. */
+@plugin "daisyui/theme" {
+  name: "luminet";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: #1A2742;
+  --color-base-200: #17233B;
+  --color-base-300: #121C31;
+  --color-base-content: #E6EAF2;
+  --color-primary: #649E3C;
+  --color-primary-content: #0F1F06;
+  --color-secondary: #94A1BA;
+  --color-secondary-content: #17233B;
+  --color-accent: #B5BECF;
+  --color-accent-content: #17233B;
+  --color-neutral: #344E7C;
+  --color-neutral-content: #E6EAF2;
+  --color-info: oklch(76% 0.12 225);
+  --color-info-content: oklch(15% 0.02 225);
+  --color-success: oklch(78% 0.16 150);
+  --color-success-content: oklch(15% 0.03 150);
+  --color-warning: oklch(82% 0.15 85);
+  --color-warning-content: oklch(15% 0.03 85);
+  --color-error: oklch(68% 0.19 25);
+  --color-error-content: oklch(15% 0.03 25);
+  --radius-selector: 1rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Huus: 3A3A7F · 352880 · 1C1647 · 16113B · 1B1245
+   Toda la paleta es oscura: el primario es un violeta luminoso del tono de
+   352880 y el acento un lavanda del tono de 3A3A7F, para que botones y
+   textos destacados se lean sobre el fondo (contraste 6.1 y 5.4). */
+@plugin "daisyui/theme" {
+  name: "huus";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: #1C1647;
+  --color-base-200: #16113B;
+  --color-base-300: #100C2C;
+  --color-base-content: #EEEBFF;
+  --color-primary: #A08CFF;
+  --color-primary-content: #16113B;
+  --color-secondary: #3A3A7F;
+  --color-secondary-content: #EEEBFF;
+  --color-accent: #8A8AE0;
+  --color-accent-content: #16113B;
+  --color-neutral: #1B1245;
+  --color-neutral-content: #EEEBFF;
+  --color-info: oklch(76% 0.12 225);
+  --color-info-content: oklch(15% 0.02 225);
+  --color-success: oklch(78% 0.16 150);
+  --color-success-content: oklch(15% 0.03 150);
+  --color-warning: oklch(82% 0.15 85);
+  --color-warning-content: oklch(15% 0.03 85);
+  --color-error: oklch(68% 0.19 25);
+  --color-error-content: oklch(15% 0.03 25);
+  --radius-selector: 1rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
 /*
   FORCE OVERRIDE:
   Si el plugin de DaisyUI ignora el bloque superior,
