@@ -165,37 +165,46 @@ export default function RichTextEditor({
   return (
     <div className="rounded-2xl border border-base-content/10 bg-base-content/[0.03] overflow-hidden focus-within:border-primary/50 transition-colors">
       <div className="flex flex-wrap gap-1 p-2 border-b border-base-content/10">
+        {/* Tooltips hacia abajo: el contenedor recorta lo que sobresale. */}
         {tools.map(({ label, icon: Icon, isActive, run }) => (
-          <button
-            key={label}
-            type="button"
-            onClick={run}
-            title={label}
-            aria-label={label}
-            aria-pressed={isActive}
-            className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
-              isActive
-                ? "chip-selected"
-                : "text-base-content/60 hover:bg-base-content/5"
-            }`}
-          >
-            <Icon className="w-4 h-4" />
-          </button>
+          <div key={label} className="tooltip tooltip-bottom" data-tip={label}>
+            <button
+              type="button"
+              onClick={run}
+              aria-label={label}
+              aria-pressed={isActive}
+              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
+                isActive
+                  ? "chip-selected"
+                  : "text-base-content/60 hover:bg-base-content/5"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          </div>
         ))}
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          disabled={uploading > 0}
-          title="Imagen"
-          aria-label="Insertar imagen"
-          className="w-11 h-11 rounded-xl flex items-center justify-center transition-colors text-base-content/60 hover:bg-base-content/5 disabled:opacity-50"
+        <div
+          className="tooltip tooltip-bottom"
+          data-tip={
+            uploading > 0
+              ? "Subiendo imagen…"
+              : "Insertar imagen (también puedes pegarla o arrastrarla)"
+          }
         >
-          {uploading > 0 ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <ImagePlus className="w-4 h-4" />
-          )}
-        </button>
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            disabled={uploading > 0}
+            aria-label="Insertar imagen"
+            className="w-11 h-11 rounded-xl flex items-center justify-center transition-colors text-base-content/60 hover:bg-base-content/5 disabled:opacity-50"
+          >
+            {uploading > 0 ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ImagePlus className="w-4 h-4" />
+            )}
+          </button>
+        </div>
         <input
           ref={fileInput}
           type="file"

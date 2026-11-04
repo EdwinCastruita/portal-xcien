@@ -790,14 +790,15 @@ export default function SolicitudDetallePage() {
                   Avanzar etapa
                 </button>
               )}
-              <button
-                onClick={() => setShowChatter(true)}
-                aria-label="Interacciones"
-                title="Interacciones"
-                className="btn-cta-secondary min-h-11 px-4 rounded-2xl flex items-center justify-center hover:text-primary hover:border-primary/40"
-              >
-                <MessageSquare className="w-5 h-5" />
-              </button>
+              <div className="tooltip tooltip-bottom flex" data-tip="Interacciones: mensajes de la oportunidad y sus tareas">
+                <button
+                  onClick={() => setShowChatter(true)}
+                  aria-label="Interacciones"
+                  className="btn-cta-secondary min-h-11 px-4 rounded-2xl flex items-center justify-center hover:text-primary hover:border-primary/40"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                </button>
+              </div>
               <OverflowMenu
                 items={[
                   { label: "Editar oportunidad", icon: Pencil, onClick: openOpportunityDrawer },

@@ -7,6 +7,7 @@ import {
   Paperclip,
   RefreshCw,
   Send,
+  User,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -21,6 +22,8 @@ interface Thread {
   name: string;
   kind: string;
   stage: string;
+  /** Usuarios asignados (solo en tareas). */
+  assignees?: string[];
   active: boolean;
   message_count: number;
 }
@@ -42,6 +45,62 @@ interface Participant {
 interface ChatterPanelProps {
   solicitudId: string;
   onClose: () => void;
+}
+
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join("");
+
+// Resumen de la tarea elegida: responsables (avatares con iniciales) y etapa.
+function TaskCard({ thread }: { thread: Thread }) {
+  const assignees = thread.assignees ?? [];
+  const shown = assignees.slice(0, 3);
+  return (
+    <div className="mt-3 flex items-center gap-3 rounded-2xl border border-base-content/10 bg-base-content/[0.03] p-3 sm:p-4">
+      <div className="flex -space-x-2 shrink-0">
+        {shown.length ? (
+          shown.map((name) => (
+            <span
+              key={name}
+              title={name}
+              className="avatar-chip w-10 h-10 rounded-full text-xs ring-2 ring-base-200"
+            >
+              {initials(name)}
+            </span>
+          ))
+        ) : (
+          <span className="w-10 h-10 rounded-full border border-dashed border-base-content/20 flex items-center justify-center text-base-content/40">
+            <User className="w-4 h-4" />
+          </span>
+        )}
+        {assignees.length > shown.length && (
+          <span className="w-10 h-10 rounded-full bg-base-content/10 ring-2 ring-base-200 flex items-center justify-center text-[10px] font-black text-base-content/60">
+            +{assignees.length - shown.length}
+          </span>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-base-content/45">
+          {assignees.length > 1 ? "Responsables" : "Responsable"}
+        </p>
+        <p
+          className={`text-sm font-bold truncate ${assignees.length ? "text-base-content" : "text-base-content/50"}`}
+          title={assignees.join(", ") || undefined}
+        >
+          {assignees.length ? assignees.join(", ") : "Sin asignar"}
+        </p>
+      </div>
+      {thread.stage && (
+        <span className="shrink-0 max-w-[45%] truncate rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary">
+          {thread.stage}
+        </span>
+      )}
+    </div>
+  );
 }
 
 const threadKey = (thread: Thread) => `${thread.model}:${thread.res_id}`;
@@ -284,10 +343,14 @@ export default function ChatterPanel({
               </div>
             )}
           </div>
-          {selected?.stage && (
-            <p className="text-xs text-base-content/50 mt-2">
-              Etapa: {selected.stage}
-            </p>
+          {selected?.model === "project.task" ? (
+            <TaskCard thread={selected} />
+          ) : (
+            selected?.stage && (
+              <p className="text-xs text-base-content/50 mt-2">
+                Etapa: {selected.stage}
+              </p>
+            )
           )}
         </div>
 
