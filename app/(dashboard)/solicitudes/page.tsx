@@ -118,6 +118,7 @@ export default function SolicitudesPage() {
     const matchesSearch =
       !debouncedSearch ||
       s.business_name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      s.site_name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       String(s.lead_id ?? "").includes(debouncedSearch.trim());
 
     if (filter === "all") return matchesSearch;
@@ -198,7 +199,7 @@ export default function SolicitudesPage() {
           </div>
           <input
             type="text"
-            placeholder="Buscar por Empresa o Folio..."
+            placeholder="Buscar por Empresa, Folio o Sitio..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-base-200 border border-base-content/5 rounded-2xl pl-12 md:pl-16 pr-4 md:pr-6 py-4 md:py-5 font-bold text-sm focus:outline-none focus:border-primary/40 transition-all shadow-sm"
@@ -267,6 +268,10 @@ export default function SolicitudesPage() {
                         <p className="text-[9px] font-bold text-base-content/50 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
                           <MapPin className="w-3 h-3 text-primary/60 shrink-0" />
                           <span className="truncate">{s.city || "S/D"}, {s.state || "S/E"}</span>
+                        </p>
+                        <p className="text-[9px] font-bold text-base-content/50 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+                          <Building2 className="w-3 h-3 text-primary/60 shrink-0" />
+                          <span className="truncate">{s.site_name || "Sin sitio asignado"}</span>
                         </p>
                       </div>
                     </div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Building2 } from "lucide-react";
 import { getStageBadge } from "../../lib/stages";
 
 interface Props {
@@ -7,6 +7,7 @@ interface Props {
   folio: string;
   status: string;
   date: string;
+  site?: string;
   href?: string;
 }
 
@@ -35,6 +36,7 @@ export default function ActivityCard({
   folio,
   status,
   date,
+  site,
   href,
 }: Props) {
   const info = getStageBadge(status);
@@ -65,6 +67,10 @@ export default function ActivityCard({
             </h4>
             <p className="text-[10px] font-black text-base-content/45 uppercase tracking-widest">
               Expediente #{folio}
+            </p>
+            <p className="text-[9px] font-bold text-base-content/50 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+              <Building2 className="w-3 h-3 text-primary/60 shrink-0" />
+              <span className="truncate">{site || "Sin sitio asignado"}</span>
             </p>
           </div>
         </div>

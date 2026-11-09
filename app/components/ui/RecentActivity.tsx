@@ -130,6 +130,7 @@ export default function RecentActivity() {
               company={sol.business_name}
               folio={`OP-${sol.lead_id}`}
               status={sol.status || ""}
+              site={sol.site_name}
               date={new Date(sol.create_date)
                 .toLocaleDateString("es-MX", {
                   day: "2-digit",
