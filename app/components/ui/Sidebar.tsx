@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  Clock,
   LayoutDashboard,
   FilePlus2,
   List,
@@ -12,12 +13,14 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { apiFetch, getCookie, SESSION_COOKIE } from "../../lib/api";
+import { clearAttendanceForLogout } from "../../lib/asistencia/logout";
 import { useMobileSidebar } from "./MobileSidebarContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: FilePlus2, label: "Nueva", href: "/solicitud/nueva" },
   { icon: List, label: "Solicitudes", href: "/solicitudes" },
+  { icon: Clock, label: "Asistencia", href: "/asistencia" },
   { icon: Settings, label: "Config", href: "/configuracion" },
 ];
 
@@ -38,6 +41,9 @@ export default function Sidebar() {
   const showLogo = Boolean(companyId) && !logoError;
 
   const handleLogout = async () => {
+    // Registros de asistencia sin conexión: se intentan enviar y, si quedan
+    // pendientes, se pide confirmación antes de borrarlos de este navegador.
+    if (!(await clearAttendanceForLogout())) return;
     try {
       await apiFetch("/logout", { method: "POST" });
     } catch (err) {

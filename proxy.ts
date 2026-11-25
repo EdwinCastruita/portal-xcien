@@ -10,7 +10,13 @@ const SESSION_COOKIE = "portal_sid";
  *  - sin cookie `portal_sid` en una ruta protegida  -> redirige a `/`
  *  - con cookie en `/` (login)                      -> redirige a `/dashboard`
  */
-const PROTECTED = ["/dashboard", "/solicitud", "/solicitudes", "/configuracion"];
+const PROTECTED = [
+  "/dashboard",
+  "/solicitud",
+  "/solicitudes",
+  "/configuracion",
+  "/asistencia",
+];
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -39,5 +45,5 @@ export function proxy(req: NextRequest) {
 
 export const config = {
   // todo menos assets estáticos y la API interna de Next
-  matcher: ["/((?!api/portal|web/image|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  matcher: ["/((?!api/portal|api/attendance|web/image|sw\\.js|manifest\\.webmanifest|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };

@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
         destination: `${API_BASE}/:path*`,
       },
       {
+        // API de asistencia (`wispi_attendance`): misma sesión de Odoo que el
+        // portal (`portal_sid` viaja como `_sid`).
+        source: "/api/attendance/:path*",
+        destination: `${ODOO_HOST}/api/attendance/:path*`,
+      },
+      {
         // Logo de la compañía activa (Sidebar) — ruta nativa de Odoo.
         source: "/logo.png",
         destination: `${ODOO_HOST}/logo.png`,

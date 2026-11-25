@@ -2,6 +2,9 @@
 
 import { usePathname } from "next/navigation";
 import {
+  Clock,
+  History,
+  UserRound,
   LayoutDashboard,
   FilePlus2,
   List,
@@ -18,6 +21,9 @@ const ROUTES: { match: (p: string) => boolean; label: string; icon: LucideIcon }
   { match: (p) => /\/solicitud\//.test(p), label: "Detalle de Solicitud", icon: FileText },
   { match: (p) => p.startsWith("/solicitudes"), label: "Mis Solicitudes", icon: List },
   { match: (p) => p.startsWith("/configuracion"), label: "Configuración", icon: Settings },
+  { match: (p) => p.startsWith("/asistencia/historial"), label: "Historial de Asistencia", icon: History },
+  { match: (p) => p.startsWith("/asistencia/perfil"), label: "Mi Perfil", icon: UserRound },
+  { match: (p) => p.startsWith("/asistencia"), label: "Asistencia", icon: Clock },
 ];
 
 export default function TopBarTitle() {

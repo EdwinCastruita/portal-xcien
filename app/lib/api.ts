@@ -43,7 +43,7 @@ export class ApiError extends Error {
   }
 }
 
-function expirePortalSession() {
+export function expirePortalSession() {
   if (typeof document === "undefined") return;
   document.cookie = `${SESSION_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
   if (window.location.pathname !== "/") window.location.assign("/?expired=1");
