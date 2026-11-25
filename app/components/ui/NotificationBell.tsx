@@ -4,15 +4,18 @@ import { useEffect, useState } from "react";
 import { Bell, CheckCircle2, XCircle, Clock, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { apiFetch, getCookie, SESSION_COOKIE } from "../../lib/api";
+import { getRole, useRole } from "../../lib/role";
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const role = useRole();
 
   const fetchNotifs = async () => {
     const sessionId = getCookie(SESSION_COOKIE);
-    if (!sessionId) return;
+    // Las notificaciones son de leads de CRM: solo para comerciales
+    if (!sessionId || getRole() === "staff") return;
 
     setLoading(true);
     try {
@@ -54,6 +57,8 @@ export default function NotificationBell() {
     localStorage.setItem("seen_notifications", JSON.stringify(ids));
     setUnreadCount(0);
   };
+
+  if (role === "staff") return null;
 
   return (
     <div className="dropdown dropdown-end">

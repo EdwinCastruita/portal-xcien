@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { API_BASE, SESSION_COOKIE } from "./lib/api";
+import { homePath, isSalesPath, saveRole } from "./lib/role";
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import AnimatedLinesBackground from "./components/ui/AnimatedLinesBackground";
 import { useCurtainTransition } from "./components/ui/CurtainTransition";
@@ -54,7 +55,13 @@ export default function LoginPage() {
       set("user_name", data.name);
       set("user_email", data.email);
       set("company_name", data.company_name);
+      const role = saveRole(data.is_sales);
       const next = new URLSearchParams(window.location.search).get("next");
+      // Quien no es comercial no puede volver a una ruta de ventas
+      const target =
+        next?.startsWith("/") && !(role === "staff" && isSalesPath(next))
+          ? next
+          : homePath(role);
       // La cortina cubre la pantalla, navega detrás de ella, y luego se abre
       // revelando el dashboard — por eso NO apagamos `isLoading` aquí: el
       // botón se queda en su estado "Iniciando…" hasta que la cortina se
@@ -62,7 +69,7 @@ export default function LoginPage() {
       // `finally` de bloque hubiera vuelto a encenderse tras un `return`
       // aquí adentro, así que `setIsLoading(false)` solo vive en el catch.
       runTransition(() => {
-        router.push(next && next.startsWith("/") ? next : "/dashboard");
+        router.push(target);
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesión");

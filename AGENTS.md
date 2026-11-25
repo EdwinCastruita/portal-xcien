@@ -108,6 +108,7 @@ Reglas que no deben romperse:
 | `portal_sid` | sid de sesión de Odoo. La lee `proxy.ts` para proteger rutas. |
 | `company_id`, `company_name` | Compañía activa (`_cid`, logo y nombre en el Sidebar). |
 | `user_name`, `user_email` | Datos del usuario para la UI. |
+| `portal_role` | `sales` o `staff`, según `is_sales` de `/login` y `/me` (grupo `sales_team.group_sale_salesman` en Odoo). Ver `app/lib/role.ts`. |
 | `app_theme` | Tema elegido (1 año). |
 
 La cookie de sesión **no puede llamarse `session_id`**: ese nombre lo usa Odoo con `HttpOnly` y, al ser same-origin por el rewrite, JS no podría borrarla y el logout fallaría. El nombre está duplicado a propósito en `proxy.ts` y en `app/lib/api.ts`; si cambia, cambia en los dos.
@@ -117,6 +118,8 @@ La cookie de sesión **no puede llamarse `session_id`**: ese nombre lo usa Odoo 
 `proxy.ts` redirige a `/` (con `?next=`) cuando no hay `portal_sid` en `/dashboard`, `/solicitud`, `/solicitudes` y `/configuracion`, y manda a `/dashboard` si ya hay sesión en `/`. Al crear una sección nueva dentro de `(dashboard)`, agrega su prefijo al arreglo `PROTECTED`.
 
 `/configuracion` aparece en el Sidebar deshabilitada y todavía no tiene página.
+
+**Roles.** Solo los comerciales (cualquier grupo de Ventas en Odoo) usan las rutas de ventas (`SALES_ONLY`: `/dashboard`, `/solicitud`, `/solicitudes`, `/configuracion`). Con `portal_role=staff`, `proxy.ts` los manda a `/asistencia`, el Sidebar solo muestra Asistencia y no se muestran notificaciones. Si la cookie falta (sesión previa), el Sidebar consulta `/me` una vez y la guarda. Es un control de navegación: Odoo no bloquea los endpoints de ventas por rol. Si agregas una sección de ventas, súmala a `SALES_ONLY` en `proxy.ts` y en `app/lib/role.ts`.
 
 ### Endpoints en uso
 

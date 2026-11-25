@@ -14,6 +14,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { apiFetch, getCookie, SESSION_COOKIE } from "../../lib/api";
 import { clearAttendanceForLogout } from "../../lib/asistencia/logout";
+import {
+  homePath,
+  isSalesPath,
+  ROLE_COOKIE,
+  saveRole,
+  useRole,
+} from "../../lib/role";
 import { useMobileSidebar } from "./MobileSidebarContext";
 
 const navItems = [
@@ -38,6 +45,26 @@ export default function Sidebar() {
     setCompanyName(getCookie("company_name"));
   }, []);
 
+  // Sesiones abiertas antes de existir `portal_role`: se pregunta el rol a
+  // Odoo una vez y, si no es comercial, se le saca de las rutas de ventas.
+  const role = useRole();
+  useEffect(() => {
+    if (getCookie(ROLE_COOKIE)) return;
+    apiFetch("/me")
+      .then((res) => {
+        const r = saveRole(res?.user?.is_sales);
+        if (r === "staff" && isSalesPath(window.location.pathname))
+          router.replace("/asistencia");
+      })
+      .catch(() => undefined);
+  }, [router]);
+
+  // "staff" (sin grupo de Ventas) solo ve el checador
+  const visibleItems =
+    role === "staff"
+      ? navItems.filter((i) => i.href === "/asistencia")
+      : navItems;
+
   const showLogo = Boolean(companyId) && !logoError;
 
   const handleLogout = async () => {
@@ -58,6 +85,7 @@ export default function Sidebar() {
       "user_email",
       "company_id",
       "company_name",
+      ROLE_COOKIE,
     ].forEach((k) => (document.cookie = `${k}=; path=/; ${expire}`));
     router.push("/");
   };
@@ -114,10 +142,10 @@ export default function Sidebar() {
             el logo al estar lado a lado). */}
         <div
           className="relative px-3 mb-8 lg:mb-10 flex flex-col gap-4 group cursor-pointer"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push(homePath(role))}
         >
           <h1 className="text-lg font-bold tracking-tight text-base-content leading-tight">
-              Portal Comercial
+              {role === "staff" ? "Portal" : "Portal Comercial"}
             </h1>
           <div
             className={`rounded-2xl flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-[1.02] ${
@@ -155,7 +183,7 @@ export default function Sidebar() {
           Menú
         </p>
         <nav className="relative flex flex-col gap-1.5">
-          {navItems.map(({ icon: Icon, label, href }) => {
+          {visibleItems.map(({ icon: Icon, label, href }) => {
             const isActive = pathname === href || pathname.startsWith(href + "/");
             const isDisabled = href === "/configuracion";
 
