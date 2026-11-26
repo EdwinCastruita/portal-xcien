@@ -23,6 +23,7 @@ Es solo el frontend. No tiene base de datos ni lógica de negocio propia: todo v
 | Animación | `framer-motion` (solo `CurtainTransition`), `tw-animate-css` |
 | Mapas | Leaflet 1.9.4 cargado por CDN (unpkg) en `MapPicker`; geocodificación con Nominatim |
 | Lint / formato | Biome 2.2.0 (no hay ESLint ni Prettier) |
+| Analítica | `@vercel/analytics` (`<Analytics />` en `app/layout.tsx`; solo reporta en despliegues de Vercel) |
 
 `@heroui/*` está en `package.json` pero no se importa en ningún archivo. No hay shadcn instalado aunque exista `components.json`.
 
@@ -60,7 +61,7 @@ app/
   error.tsx, global-error.tsx
   globals.css                 Temas daisyUI + utilidades de marca
   (dashboard)/
-    layout.tsx                Shell: Sidebar + TopBar + NotificationBell
+    layout.tsx                Shell: StatusProvider + Sidebar + TopBar (QuickCheckIn, NotificationBell)
     dashboard/page.tsx        Inicio
     solicitudes/page.tsx      Listado con filtros y paginación
     solicitud/nueva/page.tsx  Alta por pasos (stepper)

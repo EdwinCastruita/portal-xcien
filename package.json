@@ -17,6 +17,7 @@
     "@tiptap/pm": "3.32.0",
     "@tiptap/react": "3.32.0",
     "@tiptap/starter-kit": "3.32.0",
+    "@vercel/analytics": "^2.0.1",
     "daisyui": "^5.5.1-beta.2",
     "dompurify": "^3.4.17",
     "framer-motion": "^12.34.3",

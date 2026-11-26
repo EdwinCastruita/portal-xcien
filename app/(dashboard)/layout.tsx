@@ -1,12 +1,16 @@
+import { QuickCheckIn } from "../components/asistencia/QuickCheckIn";
 import Sidebar from "../components/ui/Sidebar";
 import NotificationBell from "../components/ui/NotificationBell";
 import TopBarTitle from "../components/ui/TopBarTitle";
 import MobileMenuButton from "../components/ui/MobileMenuButton";
 import { MobileSidebarProvider } from "../components/ui/MobileSidebarContext";
+import { StatusProvider } from "../lib/asistencia/status-context";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <MobileSidebarProvider>
+      {/* Estado de asistencia compartido por /asistencia y la checada rápida */}
+      <StatusProvider>
       <div className="h-dvh bg-base-100 text-base-content overflow-hidden relative">
         {/* Ambient shell glow — fixed, so it doesn't move or repeat with scroll.
             Lives once here instead of every page re-inventing its own blur. */}
@@ -27,7 +31,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                  <MobileMenuButton />
                  <TopBarTitle />
                </div>
-               <NotificationBell />
+               <div className="flex items-center gap-2 sm:gap-3">
+                 <QuickCheckIn />
+                 <NotificationBell />
+               </div>
                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-primary/40 via-base-content/10 to-transparent" />
             </div>
             {/* `max-w-[1600px]` evita que en pantallas xxl el contenido se estire
@@ -37,6 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+      </StatusProvider>
     </MobileSidebarProvider>
   );
 }

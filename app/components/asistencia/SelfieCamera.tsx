@@ -2,6 +2,7 @@
 
 import { Camera, Check, Loader2, RotateCcw, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cameraErrorMessage, captureFrame } from "@/app/lib/asistencia/device";
 
 type Props = {
@@ -80,7 +81,9 @@ export function SelfieCamera({ title, onCancel, onConfirm }: Props) {
     onConfirm(photo);
   };
 
-  return (
+  // Portal a <body>: puede abrirse dentro del modal de checada rápida, cuya
+  // animación (transform) atraparía un `position: fixed`.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -184,6 +187,7 @@ export function SelfieCamera({ title, onCancel, onConfirm }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

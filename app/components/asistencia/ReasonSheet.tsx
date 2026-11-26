@@ -2,6 +2,7 @@
 
 import { Check, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { OutReason } from "@/app/lib/asistencia/types";
 
 // Respaldo si el estado en caché viene de una versión anterior de Odoo
@@ -58,7 +59,9 @@ export function ReasonSheet({ reasons, onCancel, onConfirm }: Props) {
     onConfirm(reason, note.trim() || null);
   };
 
-  return (
+  // Portal a <body>: puede abrirse dentro del modal de checada rápida, cuya
+  // animación (transform) atraparía un `position: fixed`.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -130,6 +133,7 @@ export function ReasonSheet({ reasons, onCancel, onConfirm }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

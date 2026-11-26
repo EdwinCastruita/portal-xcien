@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
@@ -53,6 +54,8 @@ export default function RootLayout({
             <CurtainProvider>{children}</CurtainProvider>
           </ToastProvider>
         </ThemeProvider>
+        {/* Visitas y páginas vistas en Vercel Web Analytics (anónimo). */}
+        <Analytics />
       </body>
     </html>
   );
