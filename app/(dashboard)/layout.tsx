@@ -1,6 +1,10 @@
-import { QuickCheckIn } from "../components/asistencia/QuickCheckIn";
+import {
+  QuickCheckIn,
+  UserAvatar,
+} from "../components/asistencia/QuickCheckIn";
 import Sidebar from "../components/ui/Sidebar";
 import NotificationBell from "../components/ui/NotificationBell";
+import ThemeMenu from "../components/ui/ThemeMenu";
 import TopBarTitle from "../components/ui/TopBarTitle";
 import MobileMenuButton from "../components/ui/MobileMenuButton";
 import { MobileSidebarProvider } from "../components/ui/MobileSidebarContext";
@@ -31,9 +35,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                  <MobileMenuButton />
                  <TopBarTitle />
                </div>
-               <div className="flex items-center gap-2 sm:gap-3">
-                 <QuickCheckIn />
+               <div className="flex items-center gap-1 sm:gap-2">
+                 <ThemeMenu />
                  <NotificationBell />
+                 <QuickCheckIn />
+                 <UserAvatar />
                </div>
                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-primary/40 via-base-content/10 to-transparent" />
             </div>
